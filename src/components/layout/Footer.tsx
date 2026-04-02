@@ -1,0 +1,124 @@
+'use client';
+
+import Link from 'next/link';
+import { MessageCircle, Heart, Star, Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
+import styles from './Footer.module.css';
+
+export default function Footer() {
+  return (
+    <footer className={styles.footer}>
+      {/* Newsletter Band */}
+      <div className={styles.newsletter}>
+        <div className="container">
+          <div className={styles.newsletterInner}>
+            <div>
+              <p className="label-accent">Stay Inspired</p>
+              <h3 className={styles.newsletterTitle}>Design Ideas, Exclusive Offers & New Arrivals</h3>
+            </div>
+            <form className={styles.newsletterForm} onSubmit={(e) => e.preventDefault()}>
+              <input
+                type="email"
+                placeholder="Your email address"
+                className={styles.newsletterInput}
+                aria-label="Email address for newsletter"
+              />
+              <button type="submit" className="btn btn-primary">
+                Subscribe <ArrowRight size={16} />
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Footer */}
+      <div className={styles.main}>
+        <div className="container">
+          <div className={styles.grid}>
+            {/* Brand */}
+            <div className={styles.brand}>
+              <Link href="/" className={styles.logo}>
+                <span className={styles.logoIcon}>Z</span>
+                <div>
+                  <div className={styles.logoName}>ZHUA ENTERPRISES</div>
+                  <div className={styles.logoSub}>South Africa&apos;s Home Solutions Platform</div>
+                </div>
+              </Link>
+              <p className={styles.brandDesc}>
+                Premium furniture, curtains & blinds, and interior design services — delivered across all 9 South African provinces.
+              </p>
+              <div className={styles.socials}>
+                <a href="#" className={styles.socialBtn} aria-label="WhatsApp"><MessageCircle size={18} /></a>
+                <a href="#" className={styles.socialBtn} aria-label="Favourites"><Heart size={18} /></a>
+                <a href="#" className={styles.socialBtn} aria-label="Reviews"><Star size={18} /></a>
+              </div>
+            </div>
+
+            {/* Shop */}
+            <div>
+              <h4 className={styles.colTitle}>Shop</h4>
+              <ul className={styles.linkList}>
+                <li><Link href="/shop/furniture" className={styles.footerLink}>Furniture</Link></li>
+                <li><Link href="/shop/curtains" className={styles.footerLink}>Curtains & Blinds</Link></li>
+                <li><Link href="/shop/accessories" className={styles.footerLink}>Accessories</Link></li>
+                <li><Link href="/shop?badge=new" className={styles.footerLink}>New Arrivals</Link></li>
+                <li><Link href="/shop?badge=sale" className={styles.footerLink}>Sale</Link></li>
+              </ul>
+            </div>
+
+            {/* Design Studio */}
+            <div>
+              <h4 className={styles.colTitle}>Design Studio</h4>
+              <ul className={styles.linkList}>
+                <li><Link href="/design-studio/room-visualizer" className={styles.footerLink}>Room Visualizer</Link></li>
+                <li><Link href="/design-studio/curtain-customizer" className={styles.footerLink}>Curtain Customizer</Link></li>
+                <li><Link href="/design-studio/calculator" className={styles.footerLink}>Curtain Calculator</Link></li>
+                <li><Link href="/book-installation" className={styles.footerLink}>Book Installation</Link></li>
+                <li><Link href="/gallery" className={styles.footerLink}>Gallery</Link></li>
+              </ul>
+            </div>
+
+            {/* Help & Contact */}
+            <div>
+              <h4 className={styles.colTitle}>Help & Contact</h4>
+              <ul className={styles.linkList}>
+                <li><Link href="/track-order" className={styles.footerLink}>Track Your Order</Link></li>
+                <li><Link href="/policies" className={styles.footerLink}>Delivery Policy</Link></li>
+                <li><Link href="/policies" className={styles.footerLink}>Returns & Refunds</Link></li>
+                <li><Link href="/policies" className={styles.footerLink}>Privacy Policy</Link></li>
+                <li><Link href="/contact" className={styles.footerLink}>Contact Us</Link></li>
+              </ul>
+              <div className={styles.contactInfo}>
+                <a href="tel:+27000000000" className={styles.contactItem}>
+                  <Phone size={14} /> +27 (0) 00 000 0000
+                </a>
+                <a href="mailto:hello@zhuaenterprises.co.za" className={styles.contactItem}>
+                  <Mail size={14} /> hello@zhuaenterprises.co.za
+                </a>
+                <span className={styles.contactItem}>
+                  <MapPin size={14} /> Johannesburg, South Africa
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Bar */}
+      <div className={styles.bottom}>
+        <div className="container">
+          <div className={styles.bottomInner}>
+            <p className={styles.copyright}>
+              &copy; {new Date().getFullYear()} Zhua Enterprises. All rights reserved.
+            </p>
+            <div className={styles.paymentBadges}>
+              {['PayFast', 'Yoco', 'Payflex', 'Visa', 'Mastercard'].map((p) => (
+                <span key={p} className={styles.payBadge}>{p}</span>
+              ))}
+            </div>
+            <p className={styles.madeIn}>🇿🇦 Proudly South African</p>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}

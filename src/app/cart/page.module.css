@@ -1,0 +1,44 @@
+.page { padding-top: 100px; padding-bottom: 5rem; min-height: 100vh; background: var(--midnight); }
+.title { font-family: 'Playfair Display', serif; font-size: 2.5rem; color: #F0E8D5; margin-bottom: 2.5rem; }
+.layout { display: grid; grid-template-columns: 1fr 380px; gap: 2.5rem; align-items: start; }
+.items { display: flex; flex-direction: column; gap: 0.75rem; }
+.itemsHeader { display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.85rem; color: #6A6055; margin-bottom: 0.5rem; }
+.clearBtn { background: none; border: none; color: #504840; font-size: 0.8rem; cursor: pointer; transition: color 150ms; }
+.clearBtn:hover { color: #ff6b6b; }
+.item { display: flex; gap: 1.25rem; align-items: flex-start; padding: 1.25rem; background: #1A1714; border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; transition: border-color 200ms; }
+.item:hover { border-color: rgba(201,168,76,0.1); }
+.itemImg { width: 90px; height: 68px; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
+.itemInfo { flex: 1; min-width: 0; }
+.itemName { font-family: 'Playfair Display', serif; font-size: 1rem; color: #F0E8D5; text-decoration: none; display: block; margin-bottom: 4px; }
+.itemName:hover { color: #C9A84C; }
+.itemVariant { font-size: 0.78rem; color: #6A6055; margin-bottom: 0.875rem; }
+.itemActions { display: flex; align-items: center; gap: 1.25rem; }
+.qtyRow { display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 4px 8px; }
+.qtyBtn { width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.06); border: none; color: #9A9080; cursor: pointer; transition: all 150ms; }
+.qtyBtn:hover { background: rgba(201,168,76,0.15); color: #C9A84C; }
+.qty { font-family: 'Outfit', sans-serif; font-size: 0.9rem; font-weight: 700; color: #F0E8D5; min-width: 1.5rem; text-align: center; }
+.removeBtn { display: flex; align-items: center; gap: 4px; background: none; border: none; color: #504840; font-size: 0.78rem; cursor: pointer; transition: color 150ms; }
+.removeBtn:hover { color: #ff6b6b; }
+.itemPrice { text-align: right; flex-shrink: 0; }
+.itemPrice > div:first-child { font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 700; color: #C9A84C; }
+.itemUnitPrice { font-size: 0.72rem; color: #504840; margin-top: 2px; }
+
+/* Summary */
+.summary { background: #1A1714; border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 1.75rem; position: sticky; top: 100px; }
+.summaryTitle { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: #F0E8D5; margin-bottom: 1.5rem; }
+.promoForm { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.5rem; }
+.promoInput { display: flex; align-items: center; gap: 0.5rem; flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 0.625rem 0.875rem; color: #6A6055; }
+.promoField { background: none; border: none; color: #F0E8D5; font-size: 0.875rem; outline: none; width: 100%; }
+.promoSuccess { font-size: 0.8rem; color: #4ECDC4; margin-bottom: 1rem; }
+.summaryRows { display: flex; flex-direction: column; gap: 0.75rem; margin: 1.5rem 0; padding: 1.5rem 0; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); }
+.row { display: flex; justify-content: space-between; font-size: 0.9rem; color: #9A9080; }
+.totalRow { font-size: 1rem; font-weight: 600; color: #F0E8D5; }
+.total { font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 800; color: #C9A84C; }
+.summaryNote { font-size: 0.72rem; color: #3A3530; text-align: center; margin-top: 0.75rem; line-height: 1.5; }
+
+/* Empty */
+.empty { text-align: center; padding: 6rem 2rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+.emptyTitle { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: #F0E8D5; }
+.emptyDesc { color: #6A6055; }
+
+@media (max-width: 1024px) { .layout { grid-template-columns: 1fr; } .summary { position: static; } }

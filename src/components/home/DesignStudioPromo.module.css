@@ -1,0 +1,89 @@
+.section {
+  background: linear-gradient(135deg, #0F0E0D 0%, #1A1714 50%, #0F0E0D 100%);
+  padding: 6rem 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.section::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -10%;
+  width: 50%;
+  height: 200%;
+  background: radial-gradient(ellipse, rgba(201,168,76,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: center;
+}
+
+.left {}
+
+.right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.toolCard {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  text-decoration: none;
+  transition: all 250ms;
+  cursor: pointer;
+}
+
+.toolCard:hover {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(201,168,76,0.15);
+  transform: translateX(4px);
+}
+
+.toolIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.toolLabel {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #F0E8D5;
+  margin-bottom: 3px;
+}
+
+.toolDesc {
+  font-size: 0.8rem;
+  color: #6A6055;
+  line-height: 1.5;
+}
+
+.toolArrow {
+  margin-left: auto;
+  font-size: 1.2rem;
+  font-weight: 300;
+  flex-shrink: 0;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: all 200ms;
+}
+
+.toolCard:hover .toolArrow { opacity: 1; transform: translateX(0); }
+
+@media (max-width: 1024px) { .inner { grid-template-columns: 1fr; gap: 3rem; } }
