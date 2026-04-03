@@ -154,7 +154,7 @@ export default function ShopPage() {
                     <p className={styles.cardSub}>{product.subcategory}</p>
                     <h3 className={styles.cardName}>{product.name}</h3>
                     <div className={styles.cardRating}>
-                      {[...Array(5)].map((_, i) => <Star key={i} size={10} fill={i < Math.floor(product.rating) ? '#C9A84C' : 'none'} color="#C9A84C" />)}
+                      {[...Array(5)].map((_, i) => <Star key={i} size={10} fill={i < Math.floor(product.rating) ? '#B59241' : 'none'} color="#B59241" />)}
                       <span>({product.reviewCount})</span>
                     </div>
                     <div className={styles.cardPrice}>

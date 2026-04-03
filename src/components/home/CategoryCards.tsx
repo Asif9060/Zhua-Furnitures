@@ -11,7 +11,7 @@ const categories = [
     href: '/shop/furniture',
     count: '84 pieces',
     gradient: 'linear-gradient(135deg, #2A1F14 0%, #3D2E1C 100%)',
-    accent: '#C9A84C',
+    accent: '#B59241',
     shapes: ['sofa'],
   },
   {

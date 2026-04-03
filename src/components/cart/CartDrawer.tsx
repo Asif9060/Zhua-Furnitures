@@ -52,7 +52,7 @@ export default function CartDrawer() {
             items.map((item) => (
               <div key={`${item.product.id}-${item.selectedColor}`} className={styles.item}>
                 <div className={styles.itemImage}>
-                  <div className={styles.itemImagePlaceholder} style={{ background: item.product.colors.find(c => c.name === item.selectedColor)?.hex || '#3A3530' }} />
+                  <div className={styles.itemImagePlaceholder} style={{ background: item.product.colors.find(c => c.name === item.selectedColor)?.hex || '#3A5673' }} />
                 </div>
                 <div className={styles.itemInfo}>
                   <p className={styles.itemName}>{item.product.name}</p>

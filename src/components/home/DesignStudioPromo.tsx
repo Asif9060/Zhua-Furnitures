@@ -4,7 +4,7 @@ import { Wand2, Calculator, Camera, Calendar } from 'lucide-react';
 import styles from './DesignStudioPromo.module.css';
 
 const tools = [
-  { icon: Camera, label: 'Room Visualizer', desc: 'Upload a photo of your room and preview real furniture in place', href: '/design-studio/room-visualizer', color: '#C9A84C' },
+  { icon: Camera, label: 'Room Visualizer', desc: 'Upload a photo of your room and preview real furniture in place', href: '/design-studio/room-visualizer', color: '#B59241' },
   { icon: Wand2, label: 'Curtain Customizer', desc: 'Design your perfect curtains with live fabric and style preview', href: '/design-studio/curtain-customizer', color: '#4ECDC4' },
   { icon: Calculator, label: 'Curtain Calculator', desc: 'Enter your window measurements and get exact fabric quantities', href: '/design-studio/calculator', color: '#B39DDB' },
   { icon: Calendar, label: 'Book Installation', desc: 'Schedule professional installation at your preferred time', href: '/book-installation', color: '#FF8A65' },
@@ -18,10 +18,10 @@ export default function DesignStudioPromo() {
           <div className={styles.left}>
             <span className="label-accent">Design Studio</span>
             <div className="gold-divider" style={{ margin: '0.75rem 0 1rem' }} />
-            <h2 className="heading-xl" style={{ color: '#F0E8D5', marginBottom: '1.25rem' }}>
+            <h2 className="heading-xl" style={{ color: '#EAF0F8', marginBottom: '1.25rem' }}>
               Design Your Space<br />Before You Buy
             </h2>
-            <p style={{ color: '#9A9080', fontSize: '1rem', lineHeight: '1.75', maxWidth: '420px', marginBottom: '2rem' }}>
+            <p style={{ color: '#A9B7C9', fontSize: '1rem', lineHeight: '1.75', maxWidth: '420px', marginBottom: '2rem' }}>
               Our suite of free design tools helps you make confident decisions. Visualize furniture in your room, design custom curtains, and calculate exactly what you need.
             </p>
             <Link href="/design-studio" className="btn btn-primary btn-lg">

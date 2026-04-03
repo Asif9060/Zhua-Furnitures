@@ -37,7 +37,7 @@ export default function CartPage() {
 
               {items.map(item => (
                 <div key={`${item.product.id}-${item.selectedColor}`} className={styles.item}>
-                  <div className={styles.itemImg} style={{ background: item.product.colors.find(c => c.name === item.selectedColor)?.hex + '30' || '#3A3530' }}>
+                  <div className={styles.itemImg} style={{ background: item.product.colors.find(c => c.name === item.selectedColor)?.hex + '30' || '#3A5673' }}>
                     <svg viewBox="0 0 80 60" style={{ width: '100%', height: '100%', padding: '8px' }}>
                       <rect x="5" y="35" width="70" height="18" rx="4" fill={item.product.colors.find(c => c.name === item.selectedColor)?.hex} fillOpacity="0.6" />
                     </svg>

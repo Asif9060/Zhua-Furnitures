@@ -10,21 +10,21 @@ export default function OrderConfirmationPage() {
           <CheckCircle size={40} color="#4ECDC4" />
         </div>
         <span className="label-accent">Order Confirmed!</span>
-        <h1 className="heading-xl" style={{ color: '#F0E8D5', margin: '1rem 0', fontSize: '2.5rem' }}>Thank You for Your Order</h1>
-        <p style={{ color: '#9A9080', fontSize: '1rem', lineHeight: 1.7, marginBottom: '2rem' }}>
-          Your order <strong style={{ color: '#C9A84C' }}>{orderNum}</strong> has been received and is being processed. You&apos;ll receive an email confirmation shortly.
+        <h1 className="heading-xl" style={{ color: '#EAF0F8', margin: '1rem 0', fontSize: '2.5rem' }}>Thank You for Your Order</h1>
+        <p style={{ color: '#A9B7C9', fontSize: '1rem', lineHeight: 1.7, marginBottom: '2rem' }}>
+          Your order <strong style={{ color: '#B59241' }}>{orderNum}</strong> has been received and is being processed. You&apos;ll receive an email confirmation shortly.
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '2.5rem' }}>
           {[
-            { icon: Package, label: 'Processing', status: 'Active', color: '#C9A84C' },
-            { icon: Truck, label: 'Dispatched', status: 'Pending', color: '#3A3530' },
-            { icon: CheckCircle, label: 'Delivered', status: 'Pending', color: '#3A3530' },
+            { icon: Package, label: 'Processing', status: 'Active', color: '#B59241' },
+            { icon: Truck, label: 'Dispatched', status: 'Pending', color: '#3A5673' },
+            { icon: CheckCircle, label: 'Delivered', status: 'Pending', color: '#3A5673' },
           ].map(({ icon: Icon, label, status, color }) => (
-            <div key={label} style={{ padding: '1.25rem', background: '#1A1714', border: `1px solid ${color}30`, borderRadius: 12 }}>
+            <div key={label} style={{ padding: '1.25rem', background: '#163250', border: `1px solid ${color}30`, borderRadius: 12 }}>
               <Icon size={24} color={color} style={{ marginBottom: '0.5rem' }} />
-              <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: '0.85rem', fontWeight: 600, color: color === '#3A3530' ? '#504840' : '#F0E8D5' }}>{label}</div>
-              <div style={{ fontSize: '0.72rem', color: color === '#C9A84C' ? '#C9A84C' : '#3A3530', marginTop: 2 }}>{status}</div>
+              <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: '0.85rem', fontWeight: 600, color: color === '#3A5673' ? '#58708A' : '#EAF0F8' }}>{label}</div>
+              <div style={{ fontSize: '0.72rem', color: color === '#B59241' ? '#B59241' : '#3A5673', marginTop: 2 }}>{status}</div>
             </div>
           ))}
         </div>

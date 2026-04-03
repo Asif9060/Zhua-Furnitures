@@ -1,4 +1,4 @@
-.section { background: #0A0908; }
+.section { background: #0F243B; }
 
 .grid {
   display: grid;
@@ -46,13 +46,13 @@
   font-family: 'Playfair Display', serif;
   font-size: 1.1rem;
   font-weight: 600;
-  color: #F0E8D5;
+  color: #EAF0F8;
   margin-bottom: 0.75rem;
 }
 
 .stepDesc {
   font-size: 0.85rem;
-  color: #6A6055;
+  color: #7B8EA6;
   line-height: 1.7;
 }
 
@@ -62,7 +62,7 @@
   right: -1px;
   width: 2px;
   height: 40px;
-  background: linear-gradient(to bottom, transparent, rgba(201,168,76,0.2), transparent);
+  background: linear-gradient(to bottom, transparent, rgba(181,146,65,0.2), transparent);
   transform: translateY(-50%);
 }
 

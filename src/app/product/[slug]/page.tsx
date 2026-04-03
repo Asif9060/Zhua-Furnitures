@@ -76,7 +76,7 @@ export default function ProductPage({ params }: Props) {
 
             <div className={styles.ratingRow}>
               <div className={styles.stars}>
-                {[...Array(5)].map((_, i) => <Star key={i} size={14} fill={i < Math.floor(product.rating) ? '#C9A84C' : 'none'} color="#C9A84C" />)}
+                {[...Array(5)].map((_, i) => <Star key={i} size={14} fill={i < Math.floor(product.rating) ? '#B59241' : 'none'} color="#B59241" />)}
               </div>
               <span className={styles.ratingNum}>{product.rating}</span>
               <Link href="#reviews" className={styles.ratingLink}>({product.reviewCount} reviews)</Link>
@@ -188,7 +188,7 @@ export default function ProductPage({ params }: Props) {
             {/* Trust icons */}
             <div className={styles.trustIcons}>
               {[{ icon: Shield, label: '5-Year Warranty' }, { icon: RotateCcw, label: '30-Day Returns' }, { icon: Truck, label: 'SA-Wide Delivery' }].map(({ icon: I, label }) => (
-                <div key={label} className={styles.trustItem}><I size={14} color="#C9A84C" /> <span>{label}</span></div>
+                <div key={label} className={styles.trustItem}><I size={14} color="#B59241" /> <span>{label}</span></div>
               ))}
             </div>
 
@@ -196,7 +196,7 @@ export default function ProductPage({ params }: Props) {
             <div className={styles.features}>
               <h4 className={styles.featuresTitle}>What&apos;s Included</h4>
               <ul>
-                {product.features.map(f => <li key={f} className={styles.featureItem}><Check size={13} color="#C9A84C" /> {f}</li>)}
+                {product.features.map(f => <li key={f} className={styles.featureItem}><Check size={13} color="#B59241" /> {f}</li>)}
               </ul>
             </div>
           </div>
@@ -204,7 +204,7 @@ export default function ProductPage({ params }: Props) {
 
         {/* Related */}
         <div className={styles.related}>
-          <h2 className="heading-lg" style={{ color: '#F0E8D5', marginBottom: '2rem' }}>You Might Also Like</h2>
+          <h2 className="heading-lg" style={{ color: '#EAF0F8', marginBottom: '2rem' }}>You Might Also Like</h2>
           <div className={styles.relatedGrid}>
             {related.map(p => (
               <Link key={p.id} href={`/product/${p.slug}`} className={styles.relatedCard}>

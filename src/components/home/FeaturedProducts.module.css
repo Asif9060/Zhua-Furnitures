@@ -1,4 +1,4 @@
-.section { background: linear-gradient(180deg, #0A0908 0%, #0F0E0D 100%); }
+.section { background: linear-gradient(180deg, #0F243B 0%, #122A45 100%); }
 
 .header {
   display: flex;
@@ -21,7 +21,7 @@
   flex-direction: column;
   border-radius: 16px;
   overflow: hidden;
-  background: #1A1714;
+  background: #163250;
   border: 1px solid rgba(255,255,255,0.05);
   text-decoration: none;
   transition: all 350ms cubic-bezier(0.25,0.46,0.45,0.94);
@@ -29,9 +29,9 @@
 }
 
 .card:hover {
-  border-color: rgba(201,168,76,0.2);
+  border-color: rgba(181,146,65,0.2);
   transform: translateY(-6px);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(201,168,76,0.1);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(181,146,65,0.1);
 }
 
 /* Image */
@@ -39,7 +39,7 @@
   position: relative;
   aspect-ratio: 4/3;
   overflow: hidden;
-  background: #252119;
+  background: #1E3C5F;
 }
 
 .imagePlaceholder {
@@ -85,18 +85,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(10,9,8,0.85);
+  background: rgba(15,36,59,0.85);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255,255,255,0.1);
-  color: #9A9080;
+  color: #A9B7C9;
   cursor: pointer;
   transition: all 150ms;
 }
 
 .actionBtn:hover, .actionBtnActive {
-  background: rgba(201,168,76,0.15);
-  border-color: rgba(201,168,76,0.3);
-  color: #C9A84C;
+  background: rgba(181,146,65,0.15);
+  border-color: rgba(181,146,65,0.3);
+  color: #B59241;
 }
 
 /* Quick add */
@@ -110,8 +110,8 @@
   justify-content: center;
   gap: 8px;
   padding: 0.75rem;
-  background: linear-gradient(135deg, #C9A84C, #E3C36F);
-  color: #0A0908;
+  background: linear-gradient(135deg, #B59241, #D0AF63);
+  color: #0F243B;
   font-family: 'Outfit', sans-serif;
   font-size: 0.78rem;
   font-weight: 700;
@@ -134,14 +134,14 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #6A6055;
+  color: #7B8EA6;
 }
 
 .name {
   font-family: 'Playfair Display', serif;
   font-size: 1rem;
   font-weight: 500;
-  color: #F0E8D5;
+  color: #EAF0F8;
   line-height: 1.3;
 }
 
@@ -155,7 +155,7 @@
 
 .ratingText {
   font-size: 0.72rem;
-  color: #6A6055;
+  color: #7B8EA6;
 }
 
 .priceRow { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
@@ -164,12 +164,12 @@
   font-family: 'Outfit', sans-serif;
   font-size: 1.05rem;
   font-weight: 700;
-  color: #C9A84C;
+  color: #B59241;
 }
 
 .originalPrice {
   font-size: 0.82rem;
-  color: #504840;
+  color: #58708A;
   text-decoration: line-through;
 }
 

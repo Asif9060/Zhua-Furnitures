@@ -1,4 +1,4 @@
-.section { background: linear-gradient(135deg, #0F0E0D 0%, #1A1714 100%); }
+.section { background: linear-gradient(135deg, #122A45 0%, #163250 100%); }
 
 .inner {
   display: grid;
@@ -25,7 +25,7 @@
 
 .thumb:hover, .thumbActive {
   background: rgba(255,255,255,0.03);
-  border-color: rgba(201,168,76,0.15);
+  border-color: rgba(181,146,65,0.15);
 }
 
 .thumbAvatar {
@@ -46,17 +46,17 @@
   font-family: 'Outfit', sans-serif;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #F0E8D5;
+  color: #EAF0F8;
 }
 
-.thumbLoc { font-size: 0.75rem; color: #6A6055; }
+.thumbLoc { font-size: 0.75rem; color: #7B8EA6; }
 
 /* Quote Card */
 .right { display: flex; flex-direction: column; gap: 1.5rem; }
 
 .quoteCard {
   background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(201,168,76,0.12);
+  border: 1px solid rgba(181,146,65,0.12);
   border-radius: 20px;
   padding: 2.5rem;
   display: flex;
@@ -67,7 +67,7 @@
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-.quoteIcon { color: rgba(201,168,76,0.2); }
+.quoteIcon { color: rgba(181,146,65,0.2); }
 
 .stars { display: flex; gap: 3px; }
 
@@ -75,7 +75,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 1.1rem;
   font-weight: 400;
-  color: #C8BCA8;
+  color: #C8D4E3;
   line-height: 1.75;
   font-style: italic;
 }
@@ -96,8 +96,8 @@
   flex-shrink: 0;
 }
 
-.authorName { font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 600; color: #F0E8D5; }
-.authorMeta { font-size: 0.78rem; color: #6A6055; margin-top: 2px; }
+.authorName { font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 600; color: #EAF0F8; }
+.authorMeta { font-size: 0.78rem; color: #7B8EA6; margin-top: 2px; }
 
 .dots { display: flex; gap: 8px; justify-content: center; }
 
@@ -114,7 +114,7 @@
 .dotActive {
   width: 24px;
   border-radius: 4px;
-  background: #C9A84C;
+  background: #B59241;
 }
 
 @media (max-width: 1024px) { .inner { grid-template-columns: 1fr; gap: 3rem; } }

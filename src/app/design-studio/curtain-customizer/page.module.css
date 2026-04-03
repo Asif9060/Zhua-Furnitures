@@ -3,55 +3,55 @@
 .workspace { display: grid; grid-template-columns: 380px 1fr; gap: 2rem; align-items: start; }
 
 /* Panel */
-.panel { background: #1A1714; border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 1.75rem; position: sticky; top: 100px; display: flex; flex-direction: column; gap: 1.5rem; max-height: calc(100vh - 120px); overflow-y: auto; }
+.panel { background: #163250; border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 1.75rem; position: sticky; top: 100px; display: flex; flex-direction: column; gap: 1.5rem; max-height: calc(100vh - 120px); overflow-y: auto; }
 
 .group {}
-.groupTitle { font-family: 'Outfit', sans-serif; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #6A6055; margin-bottom: 0.875rem; }
-.priceTag { background: rgba(201,168,76,0.1); color: #C9A84C; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; margin-left: 8px; letter-spacing: 0; text-transform: none; }
+.groupTitle { font-family: 'Outfit', sans-serif; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #7B8EA6; margin-bottom: 0.875rem; }
+.priceTag { background: rgba(181,146,65,0.1); color: #B59241; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; margin-left: 8px; letter-spacing: 0; text-transform: none; }
 
 .fabricGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-.fabricChip { display: flex; align-items: center; gap: 0.5rem; padding: 0.625rem 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; cursor: pointer; transition: all 150ms; font-size: 0.78rem; color: #9A9080; }
-.fabricChip:hover, .fabricChipActive { background: rgba(201,168,76,0.07); border-color: rgba(201,168,76,0.25); color: #F0E8D5; }
+.fabricChip { display: flex; align-items: center; gap: 0.5rem; padding: 0.625rem 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; cursor: pointer; transition: all 150ms; font-size: 0.78rem; color: #A9B7C9; }
+.fabricChip:hover, .fabricChipActive { background: rgba(181,146,65,0.07); border-color: rgba(181,146,65,0.25); color: #EAF0F8; }
 .fabricSwatch { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; }
 
 .colorRow { display: flex; gap: 0.625rem; flex-wrap: wrap; }
 .colorDot { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all 200ms; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
-.colorDotActive { border-color: #C9A84C; transform: scale(1.15); box-shadow: 0 0 0 2px rgba(201,168,76,0.3); }
+.colorDotActive { border-color: #B59241; transform: scale(1.15); box-shadow: 0 0 0 2px rgba(181,146,65,0.3); }
 
 .headingGrid { display: flex; flex-direction: column; gap: 0.5rem; }
 .headingChip { padding: 0.75rem 1rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; cursor: pointer; transition: all 150ms; text-align: left; }
-.headingChip:hover, .headingChipActive { background: rgba(201,168,76,0.07); border-color: rgba(201,168,76,0.25); }
-.headingName { font-family: 'Outfit', sans-serif; font-size: 0.85rem; font-weight: 600; color: #F0E8D5; }
-.headingDesc { font-size: 0.72rem; color: #504840; margin-top: 2px; }
+.headingChip:hover, .headingChipActive { background: rgba(181,146,65,0.07); border-color: rgba(181,146,65,0.25); }
+.headingName { font-family: 'Outfit', sans-serif; font-size: 0.85rem; font-weight: 600; color: #EAF0F8; }
+.headingDesc { font-size: 0.72rem; color: #58708A; margin-top: 2px; }
 
 .pillRow { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.pill { padding: 0.45rem 0.875rem; border-radius: 999px; font-family: 'Outfit', sans-serif; font-size: 0.78rem; font-weight: 500; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); color: #9A9080; cursor: pointer; transition: all 150ms; }
-.pill:hover { color: #F0E8D5; border-color: rgba(201,168,76,0.2); }
-.pillActive { background: rgba(201,168,76,0.1); border-color: rgba(201,168,76,0.35); color: #C9A84C; font-weight: 600; }
+.pill { padding: 0.45rem 0.875rem; border-radius: 999px; font-family: 'Outfit', sans-serif; font-size: 0.78rem; font-weight: 500; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); color: #A9B7C9; cursor: pointer; transition: all 150ms; }
+.pill:hover { color: #EAF0F8; border-color: rgba(181,146,65,0.2); }
+.pillActive { background: rgba(181,146,65,0.1); border-color: rgba(181,146,65,0.35); color: #B59241; font-weight: 600; }
 
 .priceSummary { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; }
-.priceRow { display: flex; justify-content: space-between; font-size: 0.82rem; color: #6A6055; }
-.priceTotal { font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 700; color: #F0E8D5; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem; margin-top: 0.25rem; }
-.priceTotal span:last-child { color: #C9A84C; }
+.priceRow { display: flex; justify-content: space-between; font-size: 0.82rem; color: #7B8EA6; }
+.priceTotal { font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 700; color: #EAF0F8; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem; margin-top: 0.25rem; }
+.priceTotal span:last-child { color: #B59241; }
 
 .ctaGroup { display: flex; gap: 0.75rem; }
 
 /* Preview */
 .preview {}
-.previewLabel { font-family: 'Outfit', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #6A6055; margin-bottom: 1rem; }
+.previewLabel { font-family: 'Outfit', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #7B8EA6; margin-bottom: 1rem; }
 
-.previewWindow { background: linear-gradient(135deg, #252119, #1C1A18); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 2rem; min-height: 450px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; position: relative; overflow: hidden; margin-bottom: 1.5rem; }
+.previewWindow { background: linear-gradient(135deg, #1E3C5F, #1C1A18); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 2rem; min-height: 450px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; position: relative; overflow: hidden; margin-bottom: 1.5rem; }
 
-.windowFrame { position: relative; width: 65%; aspect-ratio: 2/2.5; background: linear-gradient(135deg, #1A1208, #251C10); border: 2px solid rgba(201,168,76,0.2); border-radius: 2px; overflow: visible; margin-top: 1rem; }
+.windowFrame { position: relative; width: 65%; aspect-ratio: 2/2.5; background: linear-gradient(135deg, #1A1208, #251C10); border: 2px solid rgba(181,146,65,0.2); border-radius: 2px; overflow: visible; margin-top: 1rem; }
 
 .windowGlass { position: absolute; inset: 4px; background: linear-gradient(135deg, rgba(100,180,255,0.1), rgba(150,200,255,0.05)); border-radius: 1px; }
 
-.curtainRod { position: absolute; top: -16px; left: -20px; right: -20px; height: 12px; background: linear-gradient(135deg, #8B7055, #C9A84C, #8B7055); border-radius: 6px; z-index: 2; display: flex; align-items: flex-end; }
+.curtainRod { position: absolute; top: -16px; left: -20px; right: -20px; height: 12px; background: linear-gradient(135deg, #7C95B3, #B59241, #7C95B3); border-radius: 6px; z-index: 2; display: flex; align-items: flex-end; }
 
 .curtainHeading { position: absolute; top: 0; left: -18px; right: -18px; height: 28px; z-index: 1; }
 
 .eyelets { display: flex; justify-content: space-around; align-items: center; height: 100%; padding: 0 4px; }
-.eyelet { width: 14px; height: 14px; border-radius: 50%; border: 3px solid #8B7055; background: transparent; }
+.eyelet { width: 14px; height: 14px; border-radius: 50%; border: 3px solid #7C95B3; background: transparent; }
 
 .pinches { display: flex; justify-content: space-around; align-items: flex-end; height: 100%; padding: 0 8px; gap: 2px; }
 .pinch { width: 8px; height: 20px; border-radius: 2px 2px 0 0; }
@@ -74,13 +74,13 @@
 
 .curtainFold { position: absolute; top: 0; bottom: 0; left: 25%; width: 3px; background: rgba(0,0,0,0.2); border-radius: 2px; }
 
-.previewMeta { display: flex; flex-direction: column; gap: 2px; font-family: 'Outfit', sans-serif; font-size: 0.72rem; color: #504840; text-align: center; margin-top: 0.5rem; }
+.previewMeta { display: flex; flex-direction: column; gap: 2px; font-family: 'Outfit', sans-serif; font-size: 0.72rem; color: #58708A; text-align: center; margin-top: 0.5rem; }
 
 /* Spec box */
-.specBox { background: #1A1714; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 1.25rem; }
+.specBox { background: #163250; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 1.25rem; }
 .specGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .spec { display: flex; flex-direction: column; gap: 3px; }
-.specLabel { font-family: 'Outfit', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #3A3530; }
-.specValue { font-size: 0.82rem; color: #9A9080; }
+.specLabel { font-family: 'Outfit', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #3A5673; }
+.specValue { font-size: 0.82rem; color: #A9B7C9; }
 
 @media (max-width: 1024px) { .workspace { grid-template-columns: 1fr; } .panel { position: static; max-height: none; } }

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ShoppingBag, Search, Heart, Menu, X, ChevronDown } from 'lucide-react';
 import { useCartStore, useSearchStore } from '@/store';
 import styles from './Navbar.module.css';
@@ -35,14 +36,19 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const { itemCount, toggleCart } = useCartStore();
   const { open: openSearch } = useSearchStore();
-  const count = itemCount();
+  const count = mounted ? itemCount() : 0;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    setMounted(true);
   }, []);
 
   useEffect(() => {
@@ -59,11 +65,14 @@ export default function Navbar() {
         <div className={styles.inner}>
           {/* Logo */}
           <Link href="/" className={styles.logo}>
-            <span className={styles.logoIcon}>Z</span>
-            <div className={styles.logoText}>
-              <span className={styles.logoName}>ZHUA</span>
-              <span className={styles.logoSub}>ENTERPRISES</span>
-            </div>
+            <Image
+              src="/logo.jpg"
+              alt="Zhua Enterprises"
+              width={180}
+              height={180}
+              priority
+              className={styles.logoImage}
+            />
           </Link>
 
           {/* Desktop Nav */}
@@ -109,7 +118,7 @@ export default function Navbar() {
             </Link>
             <button className={styles.cartBtn} onClick={toggleCart} aria-label="Cart">
               <ShoppingBag size={20} />
-              {count > 0 && <span className={styles.cartBadge}>{count}</span>}
+              {mounted && count > 0 && <span className={styles.cartBadge}>{count}</span>}
             </button>
             <button className={styles.mobileMenuBtn} onClick={() => setMobileOpen(true)} aria-label="Menu">
               <Menu size={22} />
@@ -124,11 +133,13 @@ export default function Navbar() {
           <div className={styles.mobileMenu} onClick={(e) => e.stopPropagation()}>
             <div className={styles.mobileHeader}>
               <Link href="/" className={styles.logo}>
-                <span className={styles.logoIcon}>Z</span>
-                <div className={styles.logoText}>
-                  <span className={styles.logoName}>ZHUA</span>
-                  <span className={styles.logoSub}>ENTERPRISES</span>
-                </div>
+                <Image
+                  src="/logo.jpg"
+                  alt="Zhua Enterprises"
+                  width={160}
+                  height={160}
+                  className={styles.mobileLogoImage}
+                />
               </Link>
               <button className={styles.mobileClose} onClick={() => setMobileOpen(false)}>
                 <X size={24} />

@@ -1,6 +1,6 @@
 .bar {
-  background: linear-gradient(135deg, #252119, #1C1A18);
-  border-bottom: 1px solid rgba(201,168,76,0.1);
+  background: linear-gradient(135deg, #1E3C5F, #1C1A18);
+  border-bottom: 1px solid rgba(181,146,65,0.1);
   padding: 0.875rem 0;
 }
 
@@ -18,13 +18,13 @@
   gap: 0.5rem;
 }
 
-.icon { color: #C9A84C; flex-shrink: 0; }
+.icon { color: #B59241; flex-shrink: 0; }
 
 .text {
   font-family: 'Outfit', sans-serif;
   font-size: 0.8rem;
   font-weight: 500;
-  color: #9A9080;
+  color: #A9B7C9;
   white-space: nowrap;
 }
 

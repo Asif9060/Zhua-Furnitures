@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { MessageCircle, Heart, Star, Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
 import styles from './Footer.module.css';
 
@@ -37,11 +38,13 @@ export default function Footer() {
             {/* Brand */}
             <div className={styles.brand}>
               <Link href="/" className={styles.logo}>
-                <span className={styles.logoIcon}>Z</span>
-                <div>
-                  <div className={styles.logoName}>ZHUA ENTERPRISES</div>
-                  <div className={styles.logoSub}>South Africa&apos;s Home Solutions Platform</div>
-                </div>
+                <Image
+                  src="/logo.jpg"
+                  alt="Zhua Enterprises"
+                  width={220}
+                  height={220}
+                  className={styles.logoImage}
+                />
               </Link>
               <p className={styles.brandDesc}>
                 Premium furniture, curtains & blinds, and interior design services — delivered across all 9 South African provinces.

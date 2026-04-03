@@ -6,24 +6,24 @@
 
 :root {
   /* — Color Tokens — */
-  --midnight: #0A0908;
-  --charcoal: #1A1714;
-  --charcoal-2: #252119;
-  --warm-gray: #3A3530;
-  --warm-gray-2: #504840;
-  --gold: #C9A84C;
-  --gold-light: #E3C36F;
-  --gold-dim: #A88A35;
-  --ivory: #F5EFE0;
-  --cream: #EDE4CE;
-  --cream-2: #E0D5BC;
+  --midnight: #0F243B;
+  --charcoal: #163250;
+  --charcoal-2: #1E3C5F;
+  --warm-gray: #3A5673;
+  --warm-gray-2: #58708A;
+  --gold: #B59241;
+  --gold-light: #D0AF63;
+  --gold-dim: #8F7333;
+  --ivory: #F1F6FC;
+  --cream: #E4EBF4;
+  --cream-2: #D3DCE8;
   --white: #FFFFFF;
-  --text-primary: #F0E8D5;
-  --text-dim: #9A9080;
-  --text-muted: #6A6055;
-  --border: rgba(201, 168, 76, 0.2);
+  --text-primary: #EAF0F8;
+  --text-dim: #A9B7C9;
+  --text-muted: #7B8EA6;
+  --border: rgba(181, 146, 65, 0.2);
   --border-light: rgba(255,255,255,0.08);
-  --glass: rgba(26,23,20,0.85);
+  --glass: rgba(22,50,80,0.85);
 
   /* — Typography — */
   --font-display: 'Playfair Display', Georgia, serif;
@@ -52,7 +52,7 @@
   --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 24px rgba(0,0,0,0.4);
   --shadow-lg: 0 8px 48px rgba(0,0,0,0.5);
-  --shadow-gold: 0 0 32px rgba(201,168,76,0.25);
+  --shadow-gold: 0 0 32px rgba(181,146,65,0.25);
   --shadow-lift: 0 16px 64px rgba(0,0,0,0.6);
 
   /* — Transitions — */
@@ -263,12 +263,12 @@ ul, ol {
   background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
   background-size: 200% 100%;
   color: var(--midnight);
-  box-shadow: 0 4px 20px rgba(201,168,76,0.35);
+  box-shadow: 0 4px 20px rgba(181,146,65,0.35);
 }
 
 .btn-primary:hover {
   background-position: 100% 0;
-  box-shadow: 0 6px 32px rgba(201,168,76,0.5);
+  box-shadow: 0 6px 32px rgba(181,146,65,0.5);
   transform: translateY(-2px);
 }
 
@@ -281,7 +281,7 @@ ul, ol {
 .btn-outline:hover {
   background: var(--gold);
   color: var(--midnight);
-  box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+  box-shadow: 0 4px 20px rgba(181,146,65,0.3);
   transform: translateY(-2px);
 }
 
@@ -342,7 +342,7 @@ ul, ol {
 }
 
 .glass-card {
-  background: rgba(26,23,20,0.7);
+  background: rgba(22,50,80,0.7);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   backdrop-filter: blur(20px);
@@ -383,7 +383,7 @@ ul, ol {
 
 .form-input:focus {
   border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(201,168,76,0.15);
+  box-shadow: 0 0 0 3px rgba(181,146,65,0.15);
 }
 
 .form-input::placeholder {
@@ -426,7 +426,7 @@ ul, ol {
 
 .form-textarea:focus {
   border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(201,168,76,0.15);
+  box-shadow: 0 0 0 3px rgba(181,146,65,0.15);
 }
 
 /* ============================================================
@@ -447,9 +447,9 @@ ul, ol {
 }
 
 .badge-gold {
-  background: rgba(201,168,76,0.15);
+  background: rgba(181,146,65,0.15);
   color: var(--gold);
-  border: 1px solid rgba(201,168,76,0.3);
+  border: 1px solid rgba(181,146,65,0.3);
 }
 
 .badge-sale {
@@ -519,14 +519,14 @@ ul, ol {
   left: 0;
   right: 0;
   height: 60%;
-  background: linear-gradient(to top, rgba(10,9,8,0.9), transparent);
+  background: linear-gradient(to top, rgba(15,36,59,0.9), transparent);
   pointer-events: none;
 }
 
 .overlay-full {
   position: absolute;
   inset: 0;
-  background: rgba(10,9,8,0.5);
+  background: rgba(15,36,59,0.5);
   pointer-events: none;
 }
 
@@ -566,8 +566,8 @@ ul, ol {
 }
 
 @keyframes goldPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0); }
-  50%       { box-shadow: 0 0 0 8px rgba(201,168,76,0.2); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(181,146,65,0); }
+  50%       { box-shadow: 0 0 0 8px rgba(181,146,65,0.2); }
 }
 
 @keyframes spin {
@@ -656,7 +656,7 @@ ul, ol {
 .product-card:hover {
   border-color: var(--border);
   transform: translateY(-6px);
-  box-shadow: var(--shadow-lift), 0 0 0 1px rgba(201,168,76,0.15);
+  box-shadow: var(--shadow-lift), 0 0 0 1px rgba(181,146,65,0.15);
 }
 
 .product-card-image {
@@ -771,7 +771,7 @@ ul, ol {
 }
 
 .navbar-solid {
-  background: rgba(10,9,8,0.97);
+  background: rgba(15,36,59,0.97);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-light);
   box-shadow: 0 4px 24px rgba(0,0,0,0.3);
@@ -794,8 +794,8 @@ ul, ol {
 
 .hero-gradient {
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(201,168,76,0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(201,168,76,0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 50%, rgba(181,146,65,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(181,146,65,0.05) 0%, transparent 50%),
     linear-gradient(135deg, var(--midnight) 0%, var(--charcoal) 100%);
 }
 
@@ -899,11 +899,11 @@ ul, ol {
 .step-circle-active {
   background: var(--gold);
   color: var(--midnight);
-  box-shadow: 0 0 16px rgba(201,168,76,0.5);
+  box-shadow: 0 0 16px rgba(181,146,65,0.5);
 }
 
 .step-circle-done {
-  background: rgba(201,168,76,0.15);
+  background: rgba(181,146,65,0.15);
   color: var(--gold);
   border: 1px solid var(--gold);
 }

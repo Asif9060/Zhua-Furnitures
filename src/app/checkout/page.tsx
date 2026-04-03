@@ -52,7 +52,7 @@ export default function CheckoutPage() {
             {/* Step 0: Delivery */}
             {step === 0 && (
               <form onSubmit={handleSubmit(onDeliverySubmit)} className={styles.formSection}>
-                <div className={styles.sectionHeader}><Truck size={18} color="#C9A84C" /><h2 className={styles.sectionTitle}>Delivery Information</h2></div>
+                <div className={styles.sectionHeader}><Truck size={18} color="#B59241" /><h2 className={styles.sectionTitle}>Delivery Information</h2></div>
                 <div className={styles.formGrid2}>
                   <div className="form-group">
                     <label className="form-label">Full Name</label>
@@ -121,7 +121,7 @@ export default function CheckoutPage() {
             {/* Step 1: Payment */}
             {step === 1 && (
               <div className={styles.formSection}>
-                <div className={styles.sectionHeader}><CreditCard size={18} color="#C9A84C" /><h2 className={styles.sectionTitle}>Payment Method</h2></div>
+                <div className={styles.sectionHeader}><CreditCard size={18} color="#B59241" /><h2 className={styles.sectionTitle}>Payment Method</h2></div>
                 <div className={styles.paymentMethods}>
                   {[
                     { id: 'payfast', label: 'PayFast', desc: 'Secure payment via PayFast', sub: 'Visa, Mastercard, EFT' },
@@ -135,7 +135,7 @@ export default function CheckoutPage() {
                         <div className={styles.paymentDesc}>{pm.desc}</div>
                         <div className={styles.paymentSub}>{pm.sub}</div>
                       </div>
-                      {paymentMethod === pm.id && <Check size={16} color="#C9A84C" />}
+                      {paymentMethod === pm.id && <Check size={16} color="#B59241" />}
                     </label>
                   ))}
                 </div>
@@ -159,7 +159,7 @@ export default function CheckoutPage() {
             {/* Step 2: Review */}
             {step === 2 && (
               <div className={styles.formSection}>
-                <div className={styles.sectionHeader}><FileText size={18} color="#C9A84C" /><h2 className={styles.sectionTitle}>Review Your Order</h2></div>
+                <div className={styles.sectionHeader}><FileText size={18} color="#B59241" /><h2 className={styles.sectionTitle}>Review Your Order</h2></div>
                 <div className={styles.reviewItems}>
                   {items.map(item => (
                     <div key={item.product.id} className={styles.reviewItem}>

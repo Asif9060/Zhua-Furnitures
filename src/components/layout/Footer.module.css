@@ -1,11 +1,11 @@
 .footer {
-  background: #0A0908;
-  border-top: 1px solid rgba(201, 168, 76, 0.12);
+  background: #0F243B;
+  border-top: 1px solid rgba(181, 146, 65, 0.12);
 }
 
 /* Newsletter */
 .newsletter {
-  background: linear-gradient(135deg, #1A1714 0%, #252119 100%);
+  background: linear-gradient(135deg, #163250 0%, #1E3C5F 100%);
   border-bottom: 1px solid rgba(255,255,255,0.05);
   padding: 3rem 0;
 }
@@ -22,7 +22,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 1.4rem;
   font-weight: 600;
-  color: #F0E8D5;
+  color: #EAF0F8;
   margin-top: 0.5rem;
 }
 
@@ -37,7 +37,7 @@
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 999px;
   padding: 0.875rem 1.5rem;
-  color: #F0E8D5;
+  color: #EAF0F8;
   font-family: 'Inter', sans-serif;
   font-size: 0.9rem;
   outline: none;
@@ -46,11 +46,11 @@
 }
 
 .newsletterInput:focus {
-  border-color: #C9A84C;
-  background: rgba(201,168,76,0.05);
+  border-color: #B59241;
+  background: rgba(181,146,65,0.05);
 }
 
-.newsletterInput::placeholder { color: #6A6055; }
+.newsletterInput::placeholder { color: #7B8EA6; }
 
 /* Main */
 .main {
@@ -73,14 +73,21 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0;
   text-decoration: none;
+}
+
+.logoImage {
+  width: 168px;
+  height: auto;
+  border-radius: 8px;
+  display: block;
 }
 
 .logoIcon {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #C9A84C, #E3C36F);
+  background: linear-gradient(135deg, #B59241, #D0AF63);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -88,7 +95,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 1.4rem;
   font-weight: 800;
-  color: #0A0908;
+  color: #0F243B;
   flex-shrink: 0;
 }
 
@@ -96,20 +103,20 @@
   font-family: 'Outfit', sans-serif;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #F0E8D5;
+  color: #EAF0F8;
   letter-spacing: 0.12em;
 }
 
 .logoSub {
   font-size: 0.65rem;
-  color: #6A6055;
+  color: #7B8EA6;
   font-family: 'Inter', sans-serif;
   margin-top: 2px;
 }
 
 .brandDesc {
   font-size: 0.875rem;
-  color: #6A6055;
+  color: #7B8EA6;
   line-height: 1.7;
   max-width: 280px;
 }
@@ -128,15 +135,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6A6055;
+  color: #7B8EA6;
   transition: all 200ms;
   text-decoration: none;
 }
 
 .socialBtn:hover {
-  background: rgba(201,168,76,0.1);
-  border-color: rgba(201,168,76,0.25);
-  color: #C9A84C;
+  background: rgba(181,146,65,0.1);
+  border-color: rgba(181,146,65,0.25);
+  color: #B59241;
 }
 
 /* Columns */
@@ -146,7 +153,7 @@
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #C9A84C;
+  color: #B59241;
   margin-bottom: 1.25rem;
 }
 
@@ -159,12 +166,12 @@
 
 .footerLink {
   font-size: 0.875rem;
-  color: #6A6055;
+  color: #7B8EA6;
   text-decoration: none;
   transition: color 150ms;
 }
 
-.footerLink:hover { color: #F0E8D5; }
+.footerLink:hover { color: #EAF0F8; }
 
 .contactInfo {
   display: flex;
@@ -178,12 +185,12 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.8rem;
-  color: #6A6055;
+  color: #7B8EA6;
   text-decoration: none;
   transition: color 150ms;
 }
 
-.contactItem:hover { color: #C9A84C; }
+.contactItem:hover { color: #B59241; }
 
 /* Bottom */
 .bottom {
@@ -201,7 +208,7 @@
 
 .copyright {
   font-size: 0.8rem;
-  color: #3A3530;
+  color: #3A5673;
 }
 
 .paymentBadges {
@@ -218,13 +225,13 @@
   font-family: 'Outfit', sans-serif;
   font-size: 0.68rem;
   font-weight: 700;
-  color: #3A3530;
+  color: #3A5673;
   letter-spacing: 0.05em;
 }
 
 .madeIn {
   font-size: 0.8rem;
-  color: #3A3530;
+  color: #3A5673;
 }
 
 /* Responsive */

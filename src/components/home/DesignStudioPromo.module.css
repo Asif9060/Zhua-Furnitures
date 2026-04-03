@@ -1,5 +1,5 @@
 .section {
-  background: linear-gradient(135deg, #0F0E0D 0%, #1A1714 50%, #0F0E0D 100%);
+  background: linear-gradient(135deg, #122A45 0%, #163250 50%, #122A45 100%);
   padding: 6rem 0;
   position: relative;
   overflow: hidden;
@@ -12,7 +12,7 @@
   left: -10%;
   width: 50%;
   height: 200%;
-  background: radial-gradient(ellipse, rgba(201,168,76,0.04) 0%, transparent 60%);
+  background: radial-gradient(ellipse, rgba(181,146,65,0.04) 0%, transparent 60%);
   pointer-events: none;
 }
 
@@ -46,7 +46,7 @@
 
 .toolCard:hover {
   background: rgba(255,255,255,0.04);
-  border-color: rgba(201,168,76,0.15);
+  border-color: rgba(181,146,65,0.15);
   transform: translateX(4px);
 }
 
@@ -64,13 +64,13 @@
   font-family: 'Outfit', sans-serif;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #F0E8D5;
+  color: #EAF0F8;
   margin-bottom: 3px;
 }
 
 .toolDesc {
   font-size: 0.8rem;
-  color: #6A6055;
+  color: #7B8EA6;
   line-height: 1.5;
 }
 

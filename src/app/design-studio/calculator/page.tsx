@@ -37,10 +37,10 @@ export default function CurtainCalculatorPage() {
     <div style={{ padding: '140px 0 6rem', minHeight: '100vh', background: 'var(--midnight)' }}>
       <div className="container" style={{ maxWidth: '980px' }}>
         <span className="label-accent">Design Studio</span>
-        <h1 className="heading-xl" style={{ color: '#F0E8D5', margin: '1rem 0 1.25rem' }}>Curtain Measurement Calculator</h1>
+        <h1 className="heading-xl" style={{ color: '#EAF0F8', margin: '1rem 0 1.25rem' }}>Curtain Measurement Calculator</h1>
 
         <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: '1.1fr 0.9fr' }}>
-          <div style={{ background: '#1A1714', border: '1px solid rgba(201,168,76,0.18)', borderRadius: 14, padding: '1.1rem', display: 'grid', gap: '0.8rem' }}>
+          <div style={{ background: '#163250', border: '1px solid rgba(181,146,65,0.18)', borderRadius: 14, padding: '1.1rem', display: 'grid', gap: '0.8rem' }}>
             <div className="form-group">
               <label className="form-label">Rail Width (cm)</label>
               <input type="number" className="form-input" value={width} onChange={(e) => setWidth(Number(e.target.value || 0))} min={60} />
@@ -72,13 +72,13 @@ export default function CurtainCalculatorPage() {
             </div>
           </div>
 
-          <aside style={{ background: '#1A1714', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '1.1rem' }}>
-            <h2 className="heading-md" style={{ color: '#F0E8D5', fontSize: '1.2rem', marginBottom: '0.7rem' }}>Estimate</h2>
+          <aside style={{ background: '#163250', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '1.1rem' }}>
+            <h2 className="heading-md" style={{ color: '#EAF0F8', fontSize: '1.2rem', marginBottom: '0.7rem' }}>Estimate</h2>
             <div style={{ display: 'grid', gap: '0.45rem', marginBottom: '1rem' }}>
-              <p style={{ color: '#9A9080' }}>Fullness Ratio: <strong style={{ color: '#F0E8D5' }}>{estimate.fullness}x</strong></p>
-              <p style={{ color: '#9A9080' }}>Fabric Required: <strong style={{ color: '#F0E8D5' }}>{estimate.fabricMetres}m</strong></p>
-              <p style={{ color: '#9A9080' }}>Recommended Rod: <strong style={{ color: '#F0E8D5' }}>{estimate.rodSize}m</strong></p>
-              <p style={{ color: '#9A9080' }}>Estimated Cost: <strong style={{ color: '#C9A84C' }}>{formatPrice(estimate.total)}</strong></p>
+              <p style={{ color: '#A9B7C9' }}>Fullness Ratio: <strong style={{ color: '#EAF0F8' }}>{estimate.fullness}x</strong></p>
+              <p style={{ color: '#A9B7C9' }}>Fabric Required: <strong style={{ color: '#EAF0F8' }}>{estimate.fabricMetres}m</strong></p>
+              <p style={{ color: '#A9B7C9' }}>Recommended Rod: <strong style={{ color: '#EAF0F8' }}>{estimate.rodSize}m</strong></p>
+              <p style={{ color: '#A9B7C9' }}>Estimated Cost: <strong style={{ color: '#B59241' }}>{formatPrice(estimate.total)}</strong></p>
             </div>
             <div style={{ display: 'grid', gap: '0.6rem' }}>
               <button className="btn btn-primary" style={{ justifyContent: 'center' }}>Add Estimate to Cart</button>

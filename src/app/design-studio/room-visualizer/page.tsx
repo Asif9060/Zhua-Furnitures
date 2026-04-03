@@ -34,14 +34,14 @@ export default function RoomVisualizerPage() {
     if (roomImage) {
       ctx.drawImage(roomImage, 0, 0, canvas.width, canvas.height);
     } else {
-      ctx.fillStyle = '#252119';
+      ctx.fillStyle = '#1E3C5F';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#3A3530';
+      ctx.fillStyle = '#3A5673';
       ctx.font = '18px Outfit, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('Upload a room photo to get started', canvas.width / 2, canvas.height / 2 - 10);
       ctx.font = '14px Outfit, sans-serif';
-      ctx.fillStyle = '#504840';
+      ctx.fillStyle = '#58708A';
       ctx.fillText('Then drag furniture overlays onto your room', canvas.width / 2, canvas.height / 2 + 20);
     }
     overlays.forEach(ov => {
@@ -55,7 +55,7 @@ export default function RoomVisualizerPage() {
       ctx.textBaseline = 'middle';
       ctx.fillText(ov.emoji, ov.x + ov.w / 2, ov.y + ov.h / 2);
       if (ov.id === selected) {
-        ctx.strokeStyle = '#C9A84C';
+        ctx.strokeStyle = '#B59241';
         ctx.lineWidth = 2;
         ctx.setLineDash([6, 3]);
         ctx.strokeRect(ov.x - 2, ov.y - 2, ov.w + 4, ov.h + 4);
@@ -131,8 +131,8 @@ export default function RoomVisualizerPage() {
         <div className={styles.header}>
           <div>
             <span className="label-accent">Design Studio</span>
-            <h1 className="heading-xl" style={{ color: '#F0E8D5', margin: '0.75rem 0 0.5rem' }}>Room Visualizer</h1>
-            <p style={{ color: '#9A9080' }}>Upload your room photo, then drag furniture and curtain overlays to preview your design.</p>
+            <h1 className="heading-xl" style={{ color: '#EAF0F8', margin: '0.75rem 0 0.5rem' }}>Room Visualizer</h1>
+            <p style={{ color: '#A9B7C9' }}>Upload your room photo, then drag furniture and curtain overlays to preview your design.</p>
           </div>
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
             <label className="btn btn-outline btn-sm" style={{ cursor: 'pointer' }}>
@@ -163,7 +163,7 @@ export default function RoomVisualizerPage() {
                 <h4 className={styles.controlsTitle}>Selected Item</h4>
                 <div className={styles.controlsRow}>
                   <button className={styles.controlBtn} onClick={() => resize(-20)}><ZoomOut size={14} /></button>
-                  <span style={{ fontSize: '0.8rem', color: '#6A6055' }}>Resize</span>
+                  <span style={{ fontSize: '0.8rem', color: '#7B8EA6' }}>Resize</span>
                   <button className={styles.controlBtn} onClick={() => resize(20)}><ZoomIn size={14} /></button>
                 </div>
                 <button className={`${styles.controlBtn} ${styles.removeBtn}`} onClick={() => { setOverlays(prev => prev.filter(o => o.id !== selected)); setSelected(null); }}>
@@ -199,7 +199,7 @@ export default function RoomVisualizerPage() {
             />
             {!roomImage && (
               <label className={styles.uploadOverlay}>
-                <Upload size={32} color="#3A3530" />
+                <Upload size={32} color="#3A5673" />
                 <span>Click to upload your room photo</span>
                 <input type="file" accept="image/*" onChange={handleUpload} style={{ display: 'none' }} />
               </label>

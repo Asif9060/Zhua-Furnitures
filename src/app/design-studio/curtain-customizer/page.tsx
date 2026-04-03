@@ -44,8 +44,8 @@ export default function CurtainCustomizerPage() {
       <div className="container-wide">
         <div className={styles.header}>
           <span className="label-accent">Design Studio</span>
-          <h1 className="heading-xl" style={{ color: '#F0E8D5', margin: '0.75rem 0 0.5rem' }}>Curtain Customiser</h1>
-          <p style={{ color: '#9A9080' }}>Select your fabric, heading style, colour, and lining — then see a live preview of your custom curtains.</p>
+          <h1 className="heading-xl" style={{ color: '#EAF0F8', margin: '0.75rem 0 0.5rem' }}>Curtain Customiser</h1>
+          <p style={{ color: '#A9B7C9' }}>Select your fabric, heading style, colour, and lining — then see a live preview of your custom curtains.</p>
         </div>
 
         <div className={styles.workspace}>
@@ -67,7 +67,7 @@ export default function CurtainCustomizerPage() {
 
             {/* Color */}
             <div className={styles.group}>
-              <h3 className={styles.groupTitle}>Colour: <span style={{ color: '#F0E8D5', fontWeight: 400 }}>{selectedColor.name}</span></h3>
+              <h3 className={styles.groupTitle}>Colour: <span style={{ color: '#EAF0F8', fontWeight: 400 }}>{selectedColor.name}</span></h3>
               <div className={styles.colorRow}>
                 {colors.map(c => (
                   <button key={c.name} className={`${styles.colorDot} ${c.name === selectedColor.name ? styles.colorDotActive : ''}`}
