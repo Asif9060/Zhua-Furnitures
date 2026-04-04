@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { useCartStore } from '@/store';
@@ -12,8 +13,12 @@ const steps = ['Delivery', 'Payment', 'Review'];
 type DeliveryForm = { name: string; email: string; phone: string; address: string; city: string; province: string; postalCode: string; deliveryType: string; };
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('payfast');
+  const [deliveryData, setDeliveryData] = useState<DeliveryForm | null>(null);
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const { items, total, clearCart } = useCartStore();
   const { register, handleSubmit, watch } = useForm<DeliveryForm>();
   const selectedProvince = watch('province');
@@ -23,7 +28,66 @@ export default function CheckoutPage() {
   const cartTotal = total();
   const grandTotal = cartTotal + deliveryFee;
 
-  const onDeliverySubmit = () => setStep(1);
+  const onDeliverySubmit = (data: DeliveryForm) => {
+    setDeliveryData(data);
+    setSubmitError('');
+    setStep(1);
+  };
+
+  const placeOrder = async () => {
+    if (!deliveryData) {
+      setSubmitError('Please complete delivery details first.');
+      setStep(0);
+      return;
+    }
+
+    if (items.length === 0) {
+      setSubmitError('Your cart is empty.');
+      return;
+    }
+
+    setPlacingOrder(true);
+    setSubmitError('');
+
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          delivery: {
+            ...deliveryData,
+            deliveryType,
+          },
+          paymentMethod,
+          deliveryFee,
+          total: grandTotal,
+          items: items.map((item) => ({
+            productId: item.product.id,
+            productName: item.product.name,
+            unitPrice: item.product.price,
+            quantity: item.quantity,
+            selectedColor: item.selectedColor,
+            selectedSize: item.selectedSize,
+            selectedFabric: item.selectedFabric,
+            customNote: item.customNote,
+          })),
+        }),
+      });
+
+      const data = (await res.json()) as { orderNumber?: string; error?: string };
+      if (!res.ok || !data.orderNumber) {
+        throw new Error(data.error ?? 'Could not place order.');
+      }
+
+      clearCart();
+      router.push(`/order-confirmation?order=${encodeURIComponent(data.orderNumber)}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not place order.';
+      setSubmitError(message);
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
 
   return (
     <div className={styles.page}>
@@ -176,10 +240,17 @@ export default function CheckoutPage() {
                 </div>
                 <div className={styles.stepBtns}>
                   <button className="btn btn-ghost" onClick={() => setStep(1)}>← Back</button>
-                  <Link href="/order-confirmation" className="btn btn-primary btn-lg" style={{ flex: 1, justifyContent: 'center' }} onClick={clearCart}>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-lg"
+                    style={{ flex: 1, justifyContent: 'center' }}
+                    onClick={placeOrder}
+                    disabled={placingOrder}
+                  >
                     Place Order → Pay with {paymentMethod === 'payfast' ? 'PayFast' : paymentMethod === 'yoco' ? 'Yoco' : 'Payflex'}
-                  </Link>
+                  </button>
                 </div>
+                {submitError ? <p style={{ marginTop: '0.8rem', color: '#ffd0d0' }}>{submitError}</p> : null}
               </div>
             )}
           </div>

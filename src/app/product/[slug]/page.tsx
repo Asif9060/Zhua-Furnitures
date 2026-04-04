@@ -1,16 +1,19 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { products, formatPrice, deliveryProvinces } from '@/lib/data';
 import { useCartStore } from '@/store';
 import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight, Truck, Shield, RotateCcw, MessageCircle, Check } from 'lucide-react';
 import Link from 'next/link';
 import { useWishlistStore } from '@/store';
+import { useParams } from 'next/navigation';
+import { useStorefrontProducts } from '@/lib/use-storefront-products';
 import styles from './page.module.css';
 
-type Props = { params: { slug: string } };
-
-export default function ProductPage({ params }: Props) {
-  const product = products.find(p => p.slug === params.slug) || products[0];
+export default function ProductPage() {
+  const { products: liveProducts } = useStorefrontProducts();
+  const routeParams = useParams<{ slug: string }>();
+  const slug = routeParams?.slug ?? '';
+  const product = liveProducts.find((entry) => entry.slug === slug) || liveProducts[0] || products[0];
   const [selectedColor, setSelectedColor] = useState(product.colors[0]);
   const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || '');
   const [selectedFabric, setSelectedFabric] = useState(product.fabrics?.[0] || '');
@@ -21,6 +24,13 @@ export default function ProductPage({ params }: Props) {
   const { addItem } = useCartStore();
   const { toggle, has } = useWishlistStore();
 
+  useEffect(() => {
+    setSelectedColor(product.colors[0]);
+    setSelectedSize(product.sizes?.[0] || '');
+    setSelectedFabric(product.fabrics?.[0] || '');
+    setImgIndex(0);
+  }, [product.id]);
+
   const delivery = deliveryProvinces.find(p => p.id === province);
 
   const handleAddToCart = () => {
@@ -29,8 +39,11 @@ export default function ProductPage({ params }: Props) {
     setTimeout(() => setAdded(false), 2000);
   };
 
-  const related = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
-  const imgCount = 3;
+  const related = liveProducts
+    .filter((entry) => entry.category === product.category && entry.id !== product.id)
+    .slice(0, 4);
+  const galleryImages = product.images.length > 0 ? product.images : [];
+  const imgCount = galleryImages.length > 0 ? galleryImages.length : 3;
 
   return (
     <div className={styles.page}>
@@ -45,7 +58,15 @@ export default function ProductPage({ params }: Props) {
           <div className={styles.gallery}>
             <div className={styles.mainImage} style={{ background: `linear-gradient(135deg, ${selectedColor.hex}15, ${selectedColor.hex}08)` }}>
               <div className={styles.mainImageInner}>
-                <ProductHeroSVG category={product.category} color={selectedColor.hex} />
+                {galleryImages[imgIndex] ? (
+                  <img
+                    src={galleryImages[imgIndex]}
+                    alt={`${product.name} image ${imgIndex + 1}`}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <ProductHeroSVG category={product.category} color={selectedColor.hex} />
+                )}
               </div>
               <button className={styles.galleryNav} onClick={() => setImgIndex(Math.max(0, imgIndex - 1))} style={{ left: '0.875rem' }}><ChevronLeft size={18} /></button>
               <button className={styles.galleryNav} onClick={() => setImgIndex(Math.min(imgCount - 1, imgIndex + 1))} style={{ right: '0.875rem' }}><ChevronRight size={18} /></button>
@@ -56,9 +77,17 @@ export default function ProductPage({ params }: Props) {
               </div>
             </div>
             <div className={styles.thumbnails}>
-              {[...Array(3)].map((_, i) => (
+              {[...Array(imgCount)].map((_, i) => (
                 <button key={i} className={`${styles.thumb} ${i === imgIndex ? styles.thumbActive : ''}`} onClick={() => setImgIndex(i)}>
-                  <div style={{ width: '100%', height: '100%', background: `${selectedColor.hex}20` }} />
+                  {galleryImages[i] ? (
+                    <img
+                      src={galleryImages[i]}
+                      alt={`${product.name} thumbnail ${i + 1}`}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', background: `${selectedColor.hex}20` }} />
+                  )}
                 </button>
               ))}
             </div>
@@ -209,7 +238,15 @@ export default function ProductPage({ params }: Props) {
             {related.map(p => (
               <Link key={p.id} href={`/product/${p.slug}`} className={styles.relatedCard}>
                 <div className={styles.relatedImg} style={{ background: `${p.colors[0].hex}20` }}>
-                  <ProductHeroSVG category={p.category} color={p.colors[0].hex} />
+                  {p.images[0] ? (
+                    <img
+                      src={p.images[0]}
+                      alt={p.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <ProductHeroSVG category={p.category} color={p.colors[0].hex} />
+                  )}
                 </div>
                 <h4 className={styles.relatedName}>{p.name}</h4>
                 <span className={styles.relatedPrice}>{formatPrice(p.price)}</span>

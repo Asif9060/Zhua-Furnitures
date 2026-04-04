@@ -1,16 +1,18 @@
 'use client';
 import Link from 'next/link';
 import { Heart, ShoppingBag, Star, ArrowRight } from 'lucide-react';
-import { products, formatPrice } from '@/lib/data';
+import { formatPrice, type Product } from '@/lib/data';
 import { useCartStore, useWishlistStore } from '@/store';
+import { useStorefrontProducts } from '@/lib/use-storefront-products';
 import styles from './FeaturedProducts.module.css';
 
 export default function FeaturedProducts() {
+  const { products } = useStorefrontProducts();
   const featured = products.slice(0, 6);
   const { addItem } = useCartStore();
   const { toggle, has } = useWishlistStore();
 
-  const handleAddToCart = (product: typeof products[0], e: React.MouseEvent) => {
+  const handleAddToCart = (product: Product, e: React.MouseEvent) => {
     e.preventDefault();
     addItem({
       product,
@@ -40,7 +42,18 @@ export default function FeaturedProducts() {
               {/* Image */}
               <div className={styles.imageWrap}>
                 <div className={styles.imagePlaceholder}>
-                  <ProductVisual category={product.category} color={product.colors[0].hex} />
+                  {product.images[0] ? (
+                    <img
+                      src={product.images[0]}
+                      alt={product.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <ProductVisual
+                      category={product.category}
+                      color={product.colors[0]?.hex ?? '#B59241'}
+                    />
+                  )}
                 </div>
 
                 {/* Badges */}

@@ -1,14 +1,14 @@
 'use client';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Heart, ShoppingBag, Star, SlidersHorizontal, X } from 'lucide-react';
-import { products, categories, formatPrice } from '@/lib/data';
+import { categories, formatPrice } from '@/lib/data';
 import { useCartStore, useWishlistStore } from '@/store';
+import { useStorefrontProducts } from '@/lib/use-storefront-products';
 import styles from './page.module.css';
 
-const allSubcategories = [...new Set(products.map(p => p.subcategory))];
-
 export default function ShopPage() {
+  const { products } = useStorefrontProducts();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
@@ -16,6 +16,11 @@ export default function ShopPage() {
   const [showFilters, setShowFilters] = useState(false);
   const { addItem } = useCartStore();
   const { toggle, has } = useWishlistStore();
+
+  const allSubcategories = useMemo(
+    () => [...new Set(products.map((product) => product.subcategory))],
+    [products]
+  );
 
   const filtered = products
     .filter(p => selectedCategory === 'all' || p.category === selectedCategory)
@@ -132,7 +137,18 @@ export default function ShopPage() {
                 <Link key={product.id} href={`/product/${product.slug}`} className={styles.card}>
                   <div className={styles.cardImage}>
                     <div className={styles.cardImageInner}>
-                      <ProductSVG cat={product.category} color={product.colors[0].hex} />
+                      {product.images[0] ? (
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <ProductSVG
+                          cat={product.category}
+                          color={product.colors[0]?.hex ?? '#B59241'}
+                        />
+                      )}
                     </div>
                     {product.badge && (
                       <span className={`badge badge-${product.badge} ${styles.cardBadge}`}>
@@ -147,7 +163,14 @@ export default function ShopPage() {
                     </div>
                     <button
                       className={styles.cardQuickAdd}
-                      onClick={e => { e.preventDefault(); addItem({ product, quantity: 1, selectedColor: product.colors[0].name }); }}
+                      onClick={e => {
+                        e.preventDefault();
+                        addItem({
+                          product,
+                          quantity: 1,
+                          selectedColor: product.colors[0]?.name ?? 'Default',
+                        });
+                      }}
                     ><ShoppingBag size={13} /> Add to Cart</button>
                   </div>
                   <div className={styles.cardBody}>

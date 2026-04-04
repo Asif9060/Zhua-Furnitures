@@ -1,10 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
-import CartDrawer from '@/components/cart/CartDrawer';
-import SearchModal from '@/components/layout/SearchModal';
-import WhatsAppFloat from '@/components/layout/WhatsAppFloat';
+import ClientChrome from '@/components/layout/ClientChrome';
 
 export const metadata: Metadata = {
   title: {
@@ -23,14 +19,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-ZA">
+    <html lang="en-ZA" data-scroll-behavior="smooth">
       <body suppressHydrationWarning>
-        <Navbar />
-        <main>{children}</main>
-        <Footer />
-        <CartDrawer />
-        <SearchModal />
-        <WhatsAppFloat />
+        <ClientChrome>{children}</ClientChrome>
       </body>
     </html>
   );

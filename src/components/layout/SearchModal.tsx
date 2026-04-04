@@ -3,11 +3,13 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { Search, X } from 'lucide-react';
-import { products, formatPrice } from '@/lib/data';
+import { formatPrice } from '@/lib/data';
 import { useSearchStore } from '@/store';
+import { useStorefrontProducts } from '@/lib/use-storefront-products';
 import styles from './SearchModal.module.css';
 
 export default function SearchModal() {
+  const { products } = useStorefrontProducts();
   const { isOpen, query, close, setQuery } = useSearchStore();
 
   useEffect(() => {

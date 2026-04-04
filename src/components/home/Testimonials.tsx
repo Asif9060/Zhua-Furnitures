@@ -1,12 +1,63 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Star, Quote } from 'lucide-react';
-import { testimonials } from '@/lib/data';
+import { testimonials as fallbackTestimonials } from '@/lib/data';
 import styles from './Testimonials.module.css';
 
+interface CloudinaryImageAsset {
+  publicId: string;
+  secureUrl: string;
+  alt: string;
+}
+
+interface TestimonialItem {
+  id: string;
+  name: string;
+  location: string;
+  rating: number;
+  text: string;
+  project: string;
+  avatarImage: CloudinaryImageAsset | null;
+}
+
+function toInitialState(): TestimonialItem[] {
+  return fallbackTestimonials.map((item) => ({
+    id: String(item.id),
+    name: item.name,
+    location: item.location,
+    rating: item.rating,
+    text: item.text,
+    project: item.project,
+    avatarImage: null,
+  }));
+}
+
 export default function Testimonials() {
+  const [testimonials, setTestimonials] = useState<TestimonialItem[]>(toInitialState());
   const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const loadTestimonials = async () => {
+      try {
+        const res = await fetch('/api/testimonials', { cache: 'no-store' });
+        const data = (await res.json()) as { testimonials?: TestimonialItem[] };
+        if (Array.isArray(data.testimonials) && data.testimonials.length > 0) {
+          setTestimonials(data.testimonials);
+          setActive(0);
+        }
+      } catch {
+        // Keep fallback testimonials if API fetch fails.
+      }
+    };
+
+    void loadTestimonials();
+  }, []);
+
   const t = testimonials[active];
+
+  if (!t) {
+    return null;
+  }
 
   return (
     <section className={`section ${styles.section}`}>
@@ -26,9 +77,18 @@ export default function Testimonials() {
                   onClick={() => setActive(i)}
                   aria-label={`View testimonial from ${t.name}`}
                 >
-                  <div className={styles.thumbAvatar} style={{ background: `hsl(${i * 60 + 20}, 40%, 40%)` }}>
-                    {t.name.charAt(0)}
-                  </div>
+                  {t.avatarImage ? (
+                    <img
+                      src={t.avatarImage.secureUrl}
+                      alt={t.avatarImage.alt || t.name}
+                      className={styles.thumbAvatar}
+                      style={{ objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <div className={styles.thumbAvatar} style={{ background: `hsl(${i * 60 + 20}, 40%, 40%)` }}>
+                      {t.name.charAt(0)}
+                    </div>
+                  )}
                   <div>
                     <div className={styles.thumbName}>{t.name}</div>
                     <div className={styles.thumbLoc}>{t.location}</div>
@@ -48,9 +108,18 @@ export default function Testimonials() {
               </div>
               <blockquote className={styles.quoteText}>&ldquo;{t.text}&rdquo;</blockquote>
               <div className={styles.quoteAuthor}>
-                <div className={styles.authorAvatar} style={{ background: `hsl(${active * 60 + 20}, 40%, 40%)` }}>
-                  {t.name.charAt(0)}
-                </div>
+                {t.avatarImage ? (
+                  <img
+                    src={t.avatarImage.secureUrl}
+                    alt={t.avatarImage.alt || t.name}
+                    className={styles.authorAvatar}
+                    style={{ objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div className={styles.authorAvatar} style={{ background: `hsl(${active * 60 + 20}, 40%, 40%)` }}>
+                    {t.name.charAt(0)}
+                  </div>
+                )}
                 <div>
                   <div className={styles.authorName}>{t.name}</div>
                   <div className={styles.authorMeta}>{t.location} · {t.project}</div>

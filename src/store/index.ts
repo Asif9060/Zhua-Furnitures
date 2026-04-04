@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Product } from '@/lib/data';
+import type { Product } from '@/lib/data';
 
 // ── Cart ──────────────────────────────────────────────────────────────
 

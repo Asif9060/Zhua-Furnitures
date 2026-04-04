@@ -1,8 +1,13 @@
 import Link from 'next/link';
 import { CheckCircle, Package, Truck, MessageCircle } from 'lucide-react';
 
-export default function OrderConfirmationPage() {
-  const orderNum = 'ZE-2026001';
+export default async function OrderConfirmationPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ order?: string }>;
+}) {
+  const params = await searchParams;
+  const orderNum = params.order ?? 'ZE-000000';
   return (
     <div style={{ padding: '140px 0 6rem', minHeight: '100vh', background: 'var(--midnight)' }}>
       <div className="container" style={{ maxWidth: '640px', margin: '0 auto', textAlign: 'center' }}>

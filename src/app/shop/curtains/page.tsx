@@ -1,9 +1,13 @@
-import Link from 'next/link';
-import { products, formatPrice } from '@/lib/data';
+ 'use client';
 
-const curtains = products.filter((product) => product.category === 'curtains');
+import Link from 'next/link';
+import { formatPrice } from '@/lib/data';
+import { useStorefrontProducts } from '@/lib/use-storefront-products';
 
 export default function CurtainsShopPage() {
+  const { products } = useStorefrontProducts();
+  const curtains = products.filter((product) => product.category === 'curtains');
+
   return (
     <div style={{ padding: '140px 0 6rem', minHeight: '100vh', background: 'var(--midnight)' }}>
       <div className="container">

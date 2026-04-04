@@ -1,9 +1,13 @@
-import Link from 'next/link';
-import { products, formatPrice } from '@/lib/data';
+ 'use client';
 
-const furniture = products.filter((product) => product.category === 'furniture');
+import Link from 'next/link';
+import { formatPrice } from '@/lib/data';
+import { useStorefrontProducts } from '@/lib/use-storefront-products';
 
 export default function FurnitureShopPage() {
+  const { products } = useStorefrontProducts();
+  const furniture = products.filter((product) => product.category === 'furniture');
+
   return (
     <div style={{ padding: '140px 0 6rem', minHeight: '100vh', background: 'var(--midnight)' }}>
       <div className="container">
