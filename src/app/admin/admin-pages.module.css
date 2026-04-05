@@ -15,6 +15,7 @@
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 14px;
   padding: 1rem;
+  min-width: 0;
 }
 
 .cardTitle {
@@ -58,12 +59,29 @@
 
 .tableWrap {
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
   min-width: 720px;
+}
+
+.productTableWrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.productTable {
+  min-width: 1320px;
+  width: max-content;
+}
+
+.productTable th,
+.productTable td {
+  vertical-align: top;
 }
 
 .table th,
@@ -272,12 +290,102 @@
 
 @media (max-width: 1200px) {
   .grid4 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: 0.92rem;
+  }
+
+  .kpiValue {
+    font-size: 1.34rem;
+  }
+
+  .table {
+    min-width: 680px;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.68rem 0.58rem;
+  }
+
+  .ghostButton {
+    padding: 0.36rem 0.64rem;
+    font-size: 0.71rem;
+    white-space: nowrap;
+  }
+
+  .productTableWrap {
+    overflow-x: visible;
+  }
+
+  .productTable {
+    width: 100%;
+    min-width: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .productTable thead {
+    display: none;
+  }
+
+  .productTable tbody {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .productTable tr {
+    display: grid;
+    gap: 0.62rem;
+    padding: 0.82rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .productTable td {
+    display: grid;
+    gap: 0.35rem;
+    border-bottom: none;
+    padding: 0;
+    min-width: 0;
+  }
+
+  .productTable td::before {
+    content: attr(data-label);
+    font-family: var(--font-accent);
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #a9b7c9;
+  }
+}
+
+@media (max-width: 992px) {
+  .grid4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .grid2 {
     grid-template-columns: 1fr;
   }
+
+  .chart {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    height: 170px;
+  }
+
+  .table {
+    min-width: 620px;
+  }
+
 }
 
 @media (max-width: 768px) {
@@ -285,7 +393,76 @@
     grid-template-columns: 1fr;
   }
 
+  .card {
+    padding: 0.82rem;
+  }
+
+  .sectionTitle {
+    font-size: 1.04rem;
+    margin-bottom: 0.62rem;
+  }
+
+  .chart {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    height: 136px;
+    gap: 0.38rem;
+  }
+
+  .chartLabel {
+    font-size: 0.62rem;
+  }
+
+  .table {
+    min-width: 560px;
+  }
+
+  .table th,
+  .table td {
+    font-size: 0.78rem;
+    padding: 0.62rem 0.55rem;
+  }
+
+  .table th {
+    font-size: 0.64rem;
+  }
+
+  .inlineActions {
+    gap: 0.3rem;
+  }
+
+  .switchRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .toggle {
+    align-self: flex-end;
+  }
+
   .formGrid {
     grid-template-columns: 1fr;
+  }
+
+  .productTable tr {
+    padding: 0.72rem;
+    gap: 0.52rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .chart {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    height: 120px;
+  }
+
+  .table {
+    min-width: 500px;
+  }
+
+  .input,
+  .select,
+  .textarea {
+    font-size: 0.84rem;
+    padding: 0.62rem 0.68rem;
   }
 }

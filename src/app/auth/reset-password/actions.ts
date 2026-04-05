@@ -3,16 +3,11 @@
 import { headers } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { hasPublicSupabaseEnv } from '@/lib/supabase/env';
+import { getSiteUrl } from '@/lib/supabase/site-url';
 
 export interface ResetPasswordState {
   error?: string;
   success?: string;
-}
-
-function getBaseUrl(headerStore: Headers): string {
-  const host = headerStore.get('x-forwarded-host') ?? headerStore.get('host') ?? 'localhost:3000';
-  const proto = headerStore.get('x-forwarded-proto') ?? (host.includes('localhost') ? 'http' : 'https');
-  return `${proto}://${host}`;
 }
 
 export async function requestPasswordReset(
@@ -29,7 +24,7 @@ export async function requestPasswordReset(
   }
 
   const headerStore = await headers();
-  const baseUrl = getBaseUrl(headerStore);
+  const baseUrl = getSiteUrl(headerStore);
   const supabase = await createSupabaseServerClient();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {

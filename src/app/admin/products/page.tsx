@@ -703,8 +703,8 @@ export default function ProductsAdminPage() {
       <section className={styles.card}>
         <h2 className={styles.sectionTitle}>Products ({filtered.length})</h2>
         {loading ? <p style={{ color: '#a9b7c9' }}>Loading products...</p> : null}
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
+        <div className={`${styles.tableWrap} ${styles.productTableWrap}`}>
+          <table className={`${styles.table} ${styles.productTable}`}>
             <thead>
               <tr>
                 <th>SKU</th>
@@ -721,7 +721,7 @@ export default function ProductsAdminPage() {
             <tbody>
               {filtered.map((product) => (
                 <tr key={product.id}>
-                  <td>
+                  <td data-label="SKU">
                     <input
                       className={styles.input}
                       value={product.sku}
@@ -733,7 +733,7 @@ export default function ProductsAdminPage() {
                       }
                     />
                   </td>
-                  <td>
+                  <td data-label="Name">
                     <div style={{ display: 'grid', gap: '0.4rem', minWidth: '220px' }}>
                       <input
                         className={styles.input}
@@ -757,7 +757,7 @@ export default function ProductsAdminPage() {
                       />
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Category">
                     <div style={{ display: 'grid', gap: '0.4rem', minWidth: '180px' }}>
                       <select
                         className={styles.select}
@@ -785,7 +785,7 @@ export default function ProductsAdminPage() {
                       />
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Media">
                     <div style={{ display: 'grid', gap: '0.42rem' }}>
                       {product.primaryImage ? (
                         <img
@@ -799,7 +799,7 @@ export default function ProductsAdminPage() {
                       <span style={{ color: '#a9b7c9', fontSize: '0.72rem' }}>{product.imageCount} image(s)</span>
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Stock">
                     <input
                       className={styles.input}
                       style={{ maxWidth: '88px' }}
@@ -820,7 +820,7 @@ export default function ProductsAdminPage() {
                       }}
                     />
                   </td>
-                  <td>
+                  <td data-label="Specs">
                     <div style={{ display: 'grid', gap: '0.4rem', minWidth: '170px' }}>
                       <input
                         className={styles.input}
@@ -878,7 +878,7 @@ export default function ProductsAdminPage() {
                       </div>
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Price">
                     <div style={{ display: 'grid', gap: '0.45rem', minWidth: '180px' }}>
                       <input
                         className={styles.input}
@@ -917,7 +917,7 @@ export default function ProductsAdminPage() {
                       <span>Offer Price: {formatCurrency(product.offerPrice)}</span>
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Status">
                     <div style={{ display: 'grid', gap: '0.4rem', minWidth: '145px' }}>
                       <select
                         className={styles.select}
@@ -951,7 +951,7 @@ export default function ProductsAdminPage() {
                       </select>
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Actions">
                     <div className={styles.inlineActions}>
                       <button
                         className={styles.ghostButton}

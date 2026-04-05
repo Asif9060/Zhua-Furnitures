@@ -1,8 +1,10 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { getSiteUrl } from '@/lib/supabase/site-url';
 import { hasPublicSupabaseEnv, hasServiceSupabaseEnv } from '@/lib/supabase/env';
 import { logUserActivity } from '@/lib/user-activity';
 
@@ -65,11 +67,15 @@ export async function registerUser(
     };
   }
 
+  const headerStore = await headers();
+  const siteUrl = getSiteUrl(headerStore);
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
+      emailRedirectTo: `${siteUrl}/auth/login?registered=1&redirectTo=${encodeURIComponent(redirectTo)}`,
       data: {
         full_name: fullName,
       },

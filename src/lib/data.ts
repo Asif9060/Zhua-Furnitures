@@ -329,5 +329,7 @@ export const headingStyles = [
 ];
 
 export const formatPrice = (price: number): string => {
-  return `R ${price.toLocaleString('en-ZA')}`;
+  const rounded = Math.round(price);
+  const grouped = rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return `R ${grouped}`;
 };
