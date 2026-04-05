@@ -3,9 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingBag, Search, Heart, Menu, X, ChevronDown } from 'lucide-react';
+import { ShoppingBag, Search, Heart, Menu, X, ChevronDown, User, LogOut } from 'lucide-react';
 import { useCartStore, useSearchStore } from '@/store';
+import { signOutUser } from '@/app/auth/actions';
 import styles from './Navbar.module.css';
+
+interface NavbarAuthUser {
+  id: string;
+  email: string | null;
+}
 
 const navLinks = [
   {
@@ -36,10 +42,13 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [authUser, setAuthUser] = useState<NavbarAuthUser | null>(null);
+  const [authResolved, setAuthResolved] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { itemCount, toggleCart } = useCartStore();
   const { open: openSearch } = useSearchStore();
   const count = mounted ? itemCount() : 0;
+  const accountHref = authUser ? '/account' : '/auth/login';
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
@@ -55,6 +64,47 @@ export default function Navbar() {
     document.body.style.overflow = mobileOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
+
+  useEffect(() => {
+    let ignore = false;
+    const controller = new AbortController();
+
+    const loadUser = async () => {
+      try {
+        const res = await fetch('/api/auth/user', {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          if (!ignore) {
+            setAuthUser(null);
+          }
+          return;
+        }
+
+        const data = (await res.json()) as { user?: NavbarAuthUser | null };
+        if (!ignore) {
+          setAuthUser(data.user ?? null);
+        }
+      } catch {
+        if (!ignore) {
+          setAuthUser(null);
+        }
+      } finally {
+        if (!ignore) {
+          setAuthResolved(true);
+        }
+      }
+    };
+
+    void loadUser();
+
+    return () => {
+      ignore = true;
+      controller.abort();
+    };
+  }, []);
 
   const handleMouseEnter = (label: string) => setActiveMenu(label);
   const handleMouseLeave = () => setActiveMenu(null);
@@ -116,6 +166,21 @@ export default function Navbar() {
             <Link href="/account/wishlist" className={styles.actionBtn} aria-label="Wishlist">
               <Heart size={20} />
             </Link>
+            <Link href={accountHref} className={styles.actionBtn} aria-label={authUser ? 'My account' : 'Sign in'}>
+              <User size={20} />
+            </Link>
+            {authResolved && !authUser ? (
+              <Link href="/auth/register" className={styles.authCta}>
+                Join
+              </Link>
+            ) : null}
+            {authResolved && authUser ? (
+              <form action={signOutUser} className={styles.authForm}>
+                <button className={styles.actionBtn} type="submit" aria-label="Sign out">
+                  <LogOut size={18} />
+                </button>
+              </form>
+            ) : null}
             <button className={styles.cartBtn} onClick={toggleCart} aria-label="Cart">
               <ShoppingBag size={20} />
               {mounted && count > 0 && <span className={styles.cartBadge}>{count}</span>}
@@ -164,6 +229,23 @@ export default function Navbar() {
               ))}
             </ul>
             <div className={styles.mobileFooter}>
+              <div className={styles.mobileAuthActions}>
+                <Link href={accountHref} className="btn btn-outline btn-sm" onClick={() => setMobileOpen(false)}>
+                  {authUser ? 'My Account' : 'Sign In'}
+                </Link>
+                {authResolved && !authUser ? (
+                  <Link href="/auth/register" className="btn btn-primary btn-sm" onClick={() => setMobileOpen(false)}>
+                    Register
+                  </Link>
+                ) : null}
+                {authResolved && authUser ? (
+                  <form action={signOutUser}>
+                    <button type="submit" className="btn btn-outline btn-sm" onClick={() => setMobileOpen(false)}>
+                      Sign Out
+                    </button>
+                  </form>
+                ) : null}
+              </div>
               <a href="https://wa.me/27000000000" className="btn btn-whatsapp btn-sm">
                 WhatsApp Us
               </a>

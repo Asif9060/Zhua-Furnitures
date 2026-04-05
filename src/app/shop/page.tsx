@@ -158,7 +158,7 @@ export default function ShopPage() {
                     <div className={styles.cardActions}>
                       <button
                         className={`${styles.cardActionBtn} ${has(product.id) ? styles.wishlisted : ''}`}
-                        onClick={e => { e.preventDefault(); toggle(product.id); }}
+                        onClick={e => { e.preventDefault(); void toggle(product.id); }}
                       ><Heart size={15} fill={has(product.id) ? 'currentColor' : 'none'} /></button>
                     </div>
                     <button

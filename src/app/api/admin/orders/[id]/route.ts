@@ -7,6 +7,7 @@ import {
   parsePaymentStatus,
 } from '@/lib/admin-api';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { logUserActivity } from '@/lib/user-activity';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,7 +44,7 @@ export async function PATCH(
     .from('orders')
     .update(updateData)
     .eq('id', id)
-    .select('id, order_number, customer_name, created_at, total_cents, payment_status, fulfillment_status, order_items(quantity)')
+    .select('id, order_number, user_id, customer_name, created_at, total_cents, payment_status, fulfillment_status, order_items(quantity)')
     .single();
 
   if (error || !data) {
@@ -51,6 +52,19 @@ export async function PATCH(
   }
 
   const itemCount = (data.order_items ?? []).reduce((sum, item) => sum + item.quantity, 0);
+
+  if (data.user_id) {
+    await logUserActivity({
+      userId: data.user_id,
+      actionType: 'order_status_changed',
+      resourceType: 'order',
+      resourceId: data.id,
+      metadata: {
+        paymentStatus: data.payment_status,
+        fulfillmentStatus: data.fulfillment_status,
+      },
+    });
+  }
 
   return NextResponse.json({
     order: {

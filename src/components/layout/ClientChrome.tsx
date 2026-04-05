@@ -6,6 +6,7 @@ import Footer from '@/components/layout/Footer';
 import CartDrawer from '@/components/cart/CartDrawer';
 import SearchModal from '@/components/layout/SearchModal';
 import WhatsAppFloat from '@/components/layout/WhatsAppFloat';
+import WishlistSync from '@/components/layout/WishlistSync';
 
 export default function ClientChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -19,6 +20,7 @@ export default function ClientChrome({ children }: { children: React.ReactNode }
   return (
     <>
       <Navbar />
+      <WishlistSync />
       <main>{children}</main>
       <Footer />
       <CartDrawer />

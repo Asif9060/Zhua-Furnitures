@@ -69,7 +69,7 @@ export default function FeaturedProducts() {
                 <div className={styles.actions}>
                   <button
                     className={`${styles.actionBtn} ${has(product.id) ? styles.actionBtnActive : ''}`}
-                    onClick={(e) => { e.preventDefault(); toggle(product.id); }}
+                    onClick={(e) => { e.preventDefault(); void toggle(product.id); }}
                     aria-label="Add to wishlist"
                   >
                     <Heart size={16} fill={has(product.id) ? 'currentColor' : 'none'} />

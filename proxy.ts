@@ -48,7 +48,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  let response = NextResponse.next({ request });
+  const response = NextResponse.next({ request });
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -72,7 +72,8 @@ export async function proxy(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
     }
 
-    const loginUrl = new URL('/admin/login', request.url);
+    const loginPath = isAdminPage ? '/admin/login' : '/auth/login';
+    const loginUrl = new URL(loginPath, request.url);
     loginUrl.searchParams.set('redirectTo', path);
     return NextResponse.redirect(loginUrl);
   }

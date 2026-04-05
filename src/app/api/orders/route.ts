@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { hasPublicSupabaseEnv, hasServiceSupabaseEnv } from '@/lib/supabase/env';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { logUserActivity } from '@/lib/user-activity';
 
 export const dynamic = 'force-dynamic';
 
@@ -129,6 +130,18 @@ export async function POST(request: Request) {
   if (itemsError) {
     await supabase.from('orders').delete().eq('id', order.id);
     return NextResponse.json({ error: itemsError.message }, { status: 500 });
+  }
+
+  if (userId) {
+    await logUserActivity({
+      userId,
+      actionType: 'order_created',
+      resourceType: 'order',
+      resourceId: order.id,
+      metadata: {
+        orderNumber: order.order_number,
+      },
+    });
   }
 
   return NextResponse.json({

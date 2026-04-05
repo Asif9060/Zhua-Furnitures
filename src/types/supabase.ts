@@ -7,6 +7,9 @@ export interface Database {
         Row: {
           id: string;
           full_name: string | null;
+          phone: string | null;
+          avatar_url: string | null;
+          address_primary: Json;
           role: 'customer' | 'admin';
           created_at: string;
           updated_at: string;
@@ -14,6 +17,9 @@ export interface Database {
         Insert: {
           id: string;
           full_name?: string | null;
+          phone?: string | null;
+          avatar_url?: string | null;
+          address_primary?: Json;
           role?: 'customer' | 'admin';
           created_at?: string;
           updated_at?: string;
@@ -21,9 +27,143 @@ export interface Database {
         Update: {
           id?: string;
           full_name?: string | null;
+          phone?: string | null;
+          avatar_url?: string | null;
+          address_primary?: Json;
           role?: 'customer' | 'admin';
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      user_preferences: {
+        Row: {
+          id: string;
+          user_id: string;
+          marketing_email: boolean;
+          sms_notifications: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          marketing_email?: boolean;
+          sms_notifications?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          marketing_email?: boolean;
+          sms_notifications?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      user_wishlist: {
+        Row: {
+          id: string;
+          user_id: string;
+          product_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          product_id: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          product_id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      user_activity_log: {
+        Row: {
+          id: string;
+          user_id: string;
+          action_type:
+            | 'login'
+            | 'logout'
+            | 'order_created'
+            | 'order_status_changed'
+            | 'wishlist_added'
+            | 'wishlist_removed'
+            | 'profile_updated'
+            | 'password_changed'
+            | 'password_reset_requested'
+            | 'product_viewed';
+          resource_type: 'auth' | 'order' | 'wishlist' | 'profile' | 'product';
+          resource_id: string | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          action_type:
+            | 'login'
+            | 'logout'
+            | 'order_created'
+            | 'order_status_changed'
+            | 'wishlist_added'
+            | 'wishlist_removed'
+            | 'profile_updated'
+            | 'password_changed'
+            | 'password_reset_requested'
+            | 'product_viewed';
+          resource_type: 'auth' | 'order' | 'wishlist' | 'profile' | 'product';
+          resource_id?: string | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          action_type?:
+            | 'login'
+            | 'logout'
+            | 'order_created'
+            | 'order_status_changed'
+            | 'wishlist_added'
+            | 'wishlist_removed'
+            | 'profile_updated'
+            | 'password_changed'
+            | 'password_reset_requested'
+            | 'product_viewed';
+          resource_type?: 'auth' | 'order' | 'wishlist' | 'profile' | 'product';
+          resource_id?: string | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+      };
+      user_browsing_history: {
+        Row: {
+          id: string;
+          user_id: string;
+          product_id: string;
+          viewed_at: string;
+          context: Json;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          product_id: string;
+          viewed_at?: string;
+          context?: Json;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          product_id?: string;
+          viewed_at?: string;
+          context?: Json;
         };
       };
       products: {

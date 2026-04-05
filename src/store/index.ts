@@ -94,7 +94,10 @@ export const useCartStore = create<CartStore>()(
 
 interface WishlistStore {
   ids: string[];
-  toggle: (id: string) => void;
+  hydrated: boolean;
+  setIds: (ids: string[]) => void;
+  init: () => Promise<void>;
+  toggle: (id: string) => Promise<void>;
   has: (id: string) => boolean;
 }
 
@@ -102,15 +105,61 @@ export const useWishlistStore = create<WishlistStore>()(
   persist(
     (set, get) => ({
       ids: [],
-      toggle: (id) =>
+      hydrated: false,
+      setIds: (ids) => set({ ids }),
+      init: async () => {
+        if (get().hydrated) {
+          return;
+        }
+
+        set({ hydrated: true });
+
+        try {
+          const res = await fetch('/api/account/wishlist', { cache: 'no-store' });
+          if (!res.ok) {
+            return;
+          }
+
+          const data = (await res.json()) as { ids?: string[] };
+          if (Array.isArray(data.ids)) {
+            set({ ids: data.ids });
+          }
+        } catch {
+          // Guests or transient network issues should keep local persisted state.
+        }
+      },
+      toggle: async (id) => {
         set((state) => ({
           ids: state.ids.includes(id)
-            ? state.ids.filter((i) => i !== id)
+            ? state.ids.filter((entry) => entry !== id)
             : [...state.ids, id],
-        })),
+        }));
+
+        try {
+          const res = await fetch('/api/account/wishlist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId: id, mode: 'toggle' }),
+          });
+
+          if (!res.ok) {
+            return;
+          }
+
+          const data = (await res.json()) as { ids?: string[] };
+          if (Array.isArray(data.ids)) {
+            set({ ids: data.ids });
+          }
+        } catch {
+          // Keep optimistic local state when remote sync fails.
+        }
+      },
       has: (id) => get().ids.includes(id),
     }),
-    { name: 'zhua-wishlist' }
+    {
+      name: 'zhua-wishlist',
+      partialize: (state) => ({ ids: state.ids }),
+    }
   )
 );
 

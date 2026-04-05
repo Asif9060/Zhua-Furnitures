@@ -1,0 +1,72 @@
+import { notFound } from 'next/navigation';
+import { requireAuthenticatedPage } from '@/lib/auth';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { hasPublicSupabaseEnv } from '@/lib/supabase/env';
+
+function formatCurrency(cents: number): string {
+  const amount = Math.max(0, cents) / 100;
+  return `R ${amount.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function toTitle(value: string): string {
+  return value
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+export default async function OrderDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const user = await requireAuthenticatedPage('/auth/login');
+  const { id } = await params;
+
+  if (!hasPublicSupabaseEnv) {
+    notFound();
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: order } = await supabase
+    .from('orders')
+    .select('id, order_number, created_at, total_cents, payment_status, fulfillment_status, order_items(product_name, quantity, line_total_cents, selected_color, selected_size, selected_fabric)')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (!order) {
+    notFound();
+  }
+
+  return (
+    <div style={{ padding: '140px 0 6rem', minHeight: '100vh', background: 'var(--midnight)' }}>
+      <div className="container" style={{ maxWidth: '960px' }}>
+        <span className="label-accent">Account</span>
+        <h1 className="heading-xl" style={{ color: '#EAF0F8', margin: '1rem 0 1.25rem' }}>
+          Order {order.order_number}
+        </h1>
+
+        <article style={{ background: '#163250', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '1rem', marginBottom: '1rem' }}>
+          <p style={{ color: '#A9B7C9', margin: 0 }}>Placed: {new Date(order.created_at).toLocaleString('en-ZA')}</p>
+          <p style={{ color: '#A9B7C9', margin: '0.4rem 0 0' }}>Status: {toTitle(order.fulfillment_status)}</p>
+          <p style={{ color: '#A9B7C9', margin: '0.4rem 0 0' }}>Payment: {toTitle(order.payment_status)}</p>
+          <p style={{ color: '#EAF0F8', margin: '0.8rem 0 0', fontWeight: 700 }}>Total: {formatCurrency(order.total_cents)}</p>
+        </article>
+
+        <div style={{ display: 'grid', gap: '0.75rem' }}>
+          {(order.order_items ?? []).map((item, index) => (
+            <article key={`${item.product_name}-${index}`} style={{ background: '#163250', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '0.95rem 1rem', display: 'grid', gap: '0.35rem' }}>
+              <p style={{ color: '#EAF0F8', margin: 0, fontWeight: 600 }}>{item.product_name}</p>
+              <p style={{ color: '#A9B7C9', margin: 0, fontSize: '0.9rem' }}>Quantity: {item.quantity}</p>
+              {item.selected_color ? <p style={{ color: '#A9B7C9', margin: 0, fontSize: '0.9rem' }}>Color: {item.selected_color}</p> : null}
+              {item.selected_size ? <p style={{ color: '#A9B7C9', margin: 0, fontSize: '0.9rem' }}>Size: {item.selected_size}</p> : null}
+              {item.selected_fabric ? <p style={{ color: '#A9B7C9', margin: 0, fontSize: '0.9rem' }}>Fabric: {item.selected_fabric}</p> : null}
+              <p style={{ color: '#EAF0F8', margin: '0.2rem 0 0', fontWeight: 600 }}>{formatCurrency(item.line_total_cents)}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

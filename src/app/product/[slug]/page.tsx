@@ -14,7 +14,7 @@ export default function ProductPage() {
   const routeParams = useParams<{ slug: string }>();
   const slug = routeParams?.slug ?? '';
   const product = liveProducts.find((entry) => entry.slug === slug) || liveProducts[0] || products[0];
-  const [selectedColor, setSelectedColor] = useState(product.colors[0]);
+  const [selectedColorName, setSelectedColorName] = useState(product.colors[0]?.name ?? '');
   const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || '');
   const [selectedFabric, setSelectedFabric] = useState(product.fabrics?.[0] || '');
   const [quantity, setQuantity] = useState(1);
@@ -25,16 +25,25 @@ export default function ProductPage() {
   const { toggle, has } = useWishlistStore();
 
   useEffect(() => {
-    setSelectedColor(product.colors[0]);
-    setSelectedSize(product.sizes?.[0] || '');
-    setSelectedFabric(product.fabrics?.[0] || '');
-    setImgIndex(0);
-  }, [product.id]);
+    void fetch('/api/account/activity/product-view', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId: product.id, slug: product.slug }),
+    });
+  }, [product.id, product.slug]);
 
+  const selectedColor =
+    product.colors.find((entry) => entry.name === selectedColorName) ??
+    product.colors[0] ??
+    { name: 'Default', hex: '#B59241' };
+  const activeSize = product.sizes?.includes(selectedSize) ? selectedSize : product.sizes?.[0] || '';
+  const activeFabric = product.fabrics?.includes(selectedFabric)
+    ? selectedFabric
+    : product.fabrics?.[0] || '';
   const delivery = deliveryProvinces.find(p => p.id === province);
 
   const handleAddToCart = () => {
-    addItem({ product, quantity, selectedColor: selectedColor.name, selectedSize, selectedFabric });
+    addItem({ product, quantity, selectedColor: selectedColor.name, selectedSize: activeSize, selectedFabric: activeFabric });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
@@ -44,6 +53,7 @@ export default function ProductPage() {
     .slice(0, 4);
   const galleryImages = product.images.length > 0 ? product.images : [];
   const imgCount = galleryImages.length > 0 ? galleryImages.length : 3;
+  const safeImgIndex = Math.min(imgIndex, Math.max(0, imgCount - 1));
 
   return (
     <div className={styles.page}>
@@ -58,27 +68,27 @@ export default function ProductPage() {
           <div className={styles.gallery}>
             <div className={styles.mainImage} style={{ background: `linear-gradient(135deg, ${selectedColor.hex}15, ${selectedColor.hex}08)` }}>
               <div className={styles.mainImageInner}>
-                {galleryImages[imgIndex] ? (
+                {galleryImages[safeImgIndex] ? (
                   <img
-                    src={galleryImages[imgIndex]}
-                    alt={`${product.name} image ${imgIndex + 1}`}
+                    src={galleryImages[safeImgIndex]}
+                    alt={`${product.name} image ${safeImgIndex + 1}`}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 ) : (
                   <ProductHeroSVG category={product.category} color={selectedColor.hex} />
                 )}
               </div>
-              <button className={styles.galleryNav} onClick={() => setImgIndex(Math.max(0, imgIndex - 1))} style={{ left: '0.875rem' }}><ChevronLeft size={18} /></button>
-              <button className={styles.galleryNav} onClick={() => setImgIndex(Math.min(imgCount - 1, imgIndex + 1))} style={{ right: '0.875rem' }}><ChevronRight size={18} /></button>
+              <button className={styles.galleryNav} onClick={() => setImgIndex(Math.max(0, safeImgIndex - 1))} style={{ left: '0.875rem' }}><ChevronLeft size={18} /></button>
+              <button className={styles.galleryNav} onClick={() => setImgIndex(Math.min(imgCount - 1, safeImgIndex + 1))} style={{ right: '0.875rem' }}><ChevronRight size={18} /></button>
               <div className={styles.galleryDots}>
                 {[...Array(imgCount)].map((_, i) => (
-                  <button key={i} className={`${styles.galleryDot} ${i === imgIndex ? styles.galleryDotActive : ''}`} onClick={() => setImgIndex(i)} />
+                  <button key={i} className={`${styles.galleryDot} ${i === safeImgIndex ? styles.galleryDotActive : ''}`} onClick={() => setImgIndex(i)} />
                 ))}
               </div>
             </div>
             <div className={styles.thumbnails}>
               {[...Array(imgCount)].map((_, i) => (
-                <button key={i} className={`${styles.thumb} ${i === imgIndex ? styles.thumbActive : ''}`} onClick={() => setImgIndex(i)}>
+                <button key={i} className={`${styles.thumb} ${i === safeImgIndex ? styles.thumbActive : ''}`} onClick={() => setImgIndex(i)}>
                   {galleryImages[i] ? (
                     <img
                       src={galleryImages[i]}
@@ -127,7 +137,7 @@ export default function ProductPage() {
                     key={c.name}
                     className={`${styles.colorSwatch} ${c.name === selectedColor.name ? styles.colorSwatchActive : ''}`}
                     style={{ background: c.hex }}
-                    onClick={() => setSelectedColor(c)}
+                    onClick={() => setSelectedColorName(c.name)}
                     title={c.name}
                   />
                 ))}
@@ -137,10 +147,10 @@ export default function ProductPage() {
             {/* Size */}
             {product.sizes && (
               <div className={styles.optionGroup}>
-                <label className={styles.optionLabel}>Size: <strong className={styles.optionValue}>{selectedSize}</strong></label>
+                <label className={styles.optionLabel}>Size: <strong className={styles.optionValue}>{activeSize}</strong></label>
                 <div className={styles.sizePills}>
                   {product.sizes.map(s => (
-                    <button key={s} className={`${styles.sizePill} ${s === selectedSize ? styles.sizePillActive : ''}`} onClick={() => setSelectedSize(s)}>{s}</button>
+                    <button key={s} className={`${styles.sizePill} ${s === activeSize ? styles.sizePillActive : ''}`} onClick={() => setSelectedSize(s)}>{s}</button>
                   ))}
                 </div>
               </div>
@@ -149,10 +159,10 @@ export default function ProductPage() {
             {/* Fabric */}
             {product.fabrics && (
               <div className={styles.optionGroup}>
-                <label className={styles.optionLabel}>Fabric: <strong className={styles.optionValue}>{selectedFabric}</strong></label>
+                <label className={styles.optionLabel}>Fabric: <strong className={styles.optionValue}>{activeFabric}</strong></label>
                 <div className={styles.sizePills}>
                   {product.fabrics.map(f => (
-                    <button key={f} className={`${styles.sizePill} ${f === selectedFabric ? styles.sizePillActive : ''}`} onClick={() => setSelectedFabric(f)}>{f}</button>
+                    <button key={f} className={`${styles.sizePill} ${f === activeFabric ? styles.sizePillActive : ''}`} onClick={() => setSelectedFabric(f)}>{f}</button>
                   ))}
                 </div>
               </div>
@@ -173,7 +183,7 @@ export default function ProductPage() {
               <button className={`btn btn-primary btn-lg ${styles.cartBtn}`} onClick={handleAddToCart}>
                 {added ? <><Check size={18} /> Added!</> : <><ShoppingBag size={18} /> Add to Cart</>}
               </button>
-              <button className={`${styles.wishBtn} ${has(product.id) ? styles.wishBtnActive : ''}`} onClick={() => toggle(product.id)}>
+              <button className={`${styles.wishBtn} ${has(product.id) ? styles.wishBtnActive : ''}`} onClick={() => void toggle(product.id)}>
                 <Heart size={20} fill={has(product.id) ? 'currentColor' : 'none'} />
               </button>
             </div>

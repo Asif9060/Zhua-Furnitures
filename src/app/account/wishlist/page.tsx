@@ -1,11 +1,13 @@
 'use client';
 import Link from 'next/link';
-import { products, formatPrice } from '@/lib/data';
+import { formatPrice } from '@/lib/data';
+import { useStorefrontProducts } from '@/lib/use-storefront-products';
 import { useWishlistStore, useCartStore } from '@/store';
 
 export default function WishlistPage() {
   const { ids, toggle } = useWishlistStore();
   const { addItem } = useCartStore();
+  const { products, loading } = useStorefrontProducts();
   const wishedProducts = products.filter((product) => ids.includes(product.id));
 
   return (
@@ -14,7 +16,11 @@ export default function WishlistPage() {
         <span className="label-accent">Account</span>
         <h1 className="heading-xl" style={{ color: '#EAF0F8', margin: '1rem 0 1.25rem' }}>Wishlist</h1>
 
-        {wishedProducts.length === 0 ? (
+        {loading ? (
+          <div style={{ background: '#163250', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '1.2rem' }}>
+            <p style={{ color: '#A9B7C9' }}>Loading your wishlist...</p>
+          </div>
+        ) : wishedProducts.length === 0 ? (
           <div style={{ background: '#163250', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '1.2rem' }}>
             <p style={{ color: '#A9B7C9', marginBottom: '0.8rem' }}>No saved items yet.</p>
             <Link href="/shop" className="btn btn-primary btn-sm">Browse Shop</Link>
@@ -28,7 +34,7 @@ export default function WishlistPage() {
                 <p style={{ color: '#B59241', fontWeight: 600 }}>{formatPrice(product.price)}</p>
                 <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
                   <button className="btn btn-primary btn-sm" onClick={() => addItem({ product, quantity: 1, selectedColor: product.colors[0].name })}>Add to Cart</button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => toggle(product.id)}>Remove</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => void toggle(product.id)}>Remove</button>
                 </div>
               </article>
             ))}
