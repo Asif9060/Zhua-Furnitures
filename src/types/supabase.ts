@@ -187,6 +187,10 @@ export interface Database {
           in_stock: boolean;
           is_customizable: boolean;
           delivery_days: string;
+          weight_kg: number;
+          width_cm: number;
+          depth_cm: number;
+          height_cm: number;
           features: string[];
           stock: number;
           sku: string;
@@ -214,6 +218,10 @@ export interface Database {
           in_stock?: boolean;
           is_customizable?: boolean;
           delivery_days?: string;
+          weight_kg?: number;
+          width_cm?: number;
+          depth_cm?: number;
+          height_cm?: number;
           features?: string[];
           stock?: number;
           sku: string;
@@ -241,6 +249,10 @@ export interface Database {
           in_stock?: boolean;
           is_customizable?: boolean;
           delivery_days?: string;
+          weight_kg?: number;
+          width_cm?: number;
+          depth_cm?: number;
+          height_cm?: number;
           features?: string[];
           stock?: number;
           sku?: string;

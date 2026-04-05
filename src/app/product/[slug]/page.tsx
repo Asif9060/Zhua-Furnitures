@@ -51,6 +51,11 @@ export default function ProductPage() {
   const related = liveProducts
     .filter((entry) => entry.category === product.category && entry.id !== product.id)
     .slice(0, 4);
+  const weightKg = Number(product.weightKg ?? 0);
+  const widthCm = Number(product.dimensions?.widthCm ?? 0);
+  const depthCm = Number(product.dimensions?.depthCm ?? 0);
+  const heightCm = Number(product.dimensions?.heightCm ?? 0);
+  const hasPhysicalSpecs = weightKg > 0 || widthCm > 0 || depthCm > 0 || heightCm > 0;
   const galleryImages = product.images.length > 0 ? product.images : [];
   const imgCount = galleryImages.length > 0 ? galleryImages.length : 3;
   const safeImgIndex = Math.min(imgIndex, Math.max(0, imgCount - 1));
@@ -238,6 +243,22 @@ export default function ProductPage() {
                 {product.features.map(f => <li key={f} className={styles.featureItem}><Check size={13} color="#B59241" /> {f}</li>)}
               </ul>
             </div>
+
+            {hasPhysicalSpecs ? (
+              <div className={styles.features}>
+                <h4 className={styles.featuresTitle}>Physical Specs</h4>
+                <ul>
+                  {weightKg > 0 ? (
+                    <li className={styles.featureItem}><Check size={13} color="#B59241" /> Weight: {weightKg} kg</li>
+                  ) : null}
+                  {(widthCm > 0 || depthCm > 0 || heightCm > 0) ? (
+                    <li className={styles.featureItem}>
+                      <Check size={13} color="#B59241" /> Dimensions (cm): W {widthCm} × D {depthCm} × H {heightCm}
+                    </li>
+                  ) : null}
+                </ul>
+              </div>
+            ) : null}
           </div>
         </div>
 

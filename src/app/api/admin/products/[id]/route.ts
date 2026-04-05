@@ -38,6 +38,21 @@ function toPriceCents(value: number): number {
   return Math.max(0, Math.round(value * 100));
 }
 
+function toSafeMeasure(value: unknown): number {
+  const parsed =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number(value)
+        : Number.NaN;
+
+  if (!Number.isFinite(parsed)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.round(parsed * 100) / 100);
+}
+
 function applyOfferPricing(basePrice: number, offerPercentage: number): {
   priceCents: number;
   originalPriceCents: number | null;
@@ -90,6 +105,10 @@ function toAdminProductRow(product: {
   description: string;
   long_description: string;
   delivery_days: string;
+  weight_kg: number;
+  width_cm: number;
+  depth_cm: number;
+  height_cm: number;
   images: unknown;
 }) {
   const images = normalizeCloudinaryImageAssets(product.images);
@@ -116,6 +135,10 @@ function toAdminProductRow(product: {
     description: product.description,
     longDescription: product.long_description,
     deliveryDays: product.delivery_days,
+    weightKg: Number(product.weight_kg ?? 0),
+    widthCm: Number(product.width_cm ?? 0),
+    depthCm: Number(product.depth_cm ?? 0),
+    heightCm: Number(product.height_cm ?? 0),
     images,
     primaryImage: images[0]?.secureUrl ?? null,
     imageCount: images.length,
@@ -146,6 +169,10 @@ export async function PATCH(
     description?: string;
     longDescription?: string;
     deliveryDays?: string;
+    weightKg?: number;
+    widthCm?: number;
+    depthCm?: number;
+    heightCm?: number;
     images?: unknown;
   };
 
@@ -166,6 +193,10 @@ export async function PATCH(
     description?: string;
     long_description?: string;
     delivery_days?: string;
+    weight_kg?: number;
+    width_cm?: number;
+    depth_cm?: number;
+    height_cm?: number;
     images?: unknown;
   } = {};
 
@@ -216,6 +247,22 @@ export async function PATCH(
 
   if (typeof payload.deliveryDays === 'string' && payload.deliveryDays.trim()) {
     updateData.delivery_days = payload.deliveryDays.trim();
+  }
+
+  if (payload.weightKg !== undefined) {
+    updateData.weight_kg = toSafeMeasure(payload.weightKg);
+  }
+
+  if (payload.widthCm !== undefined) {
+    updateData.width_cm = toSafeMeasure(payload.widthCm);
+  }
+
+  if (payload.depthCm !== undefined) {
+    updateData.depth_cm = toSafeMeasure(payload.depthCm);
+  }
+
+  if (payload.heightCm !== undefined) {
+    updateData.height_cm = toSafeMeasure(payload.heightCm);
   }
 
   if (
@@ -272,7 +319,7 @@ export async function PATCH(
     .from('products')
     .update(updateData)
     .eq('id', id)
-    .select('id, sku, slug, name, category, subcategory, stock, price_cents, original_price_cents, status, badge, description, long_description, delivery_days, images')
+    .select('id, sku, slug, name, category, subcategory, stock, price_cents, original_price_cents, status, badge, description, long_description, delivery_days, weight_kg, width_cm, depth_cm, height_cm, images')
     .single();
 
   if (error || !data) {

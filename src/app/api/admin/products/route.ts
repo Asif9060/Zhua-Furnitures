@@ -43,6 +43,21 @@ function toPriceCents(value: number): number {
   return Math.max(0, Math.round(value * 100));
 }
 
+function toSafeMeasure(value: unknown): number {
+  const parsed =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number(value)
+        : Number.NaN;
+
+  if (!Number.isFinite(parsed)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.round(parsed * 100) / 100);
+}
+
 function applyOfferPricing(basePrice: number, offerPercentage: number): {
   priceCents: number;
   originalPriceCents: number | null;
@@ -95,6 +110,10 @@ function toAdminProductRow(product: {
   description: string;
   long_description: string;
   delivery_days: string;
+  weight_kg: number;
+  width_cm: number;
+  depth_cm: number;
+  height_cm: number;
   images: unknown;
 }) {
   const images = normalizeCloudinaryImageAssets(product.images);
@@ -121,6 +140,10 @@ function toAdminProductRow(product: {
     description: product.description,
     longDescription: product.long_description,
     deliveryDays: product.delivery_days,
+    weightKg: Number(product.weight_kg ?? 0),
+    widthCm: Number(product.width_cm ?? 0),
+    depthCm: Number(product.depth_cm ?? 0),
+    heightCm: Number(product.height_cm ?? 0),
     images,
     primaryImage: images[0]?.secureUrl ?? null,
     imageCount: images.length,
@@ -136,7 +159,7 @@ export async function GET() {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from('products')
-    .select('id, sku, slug, name, category, subcategory, stock, price_cents, original_price_cents, status, badge, description, long_description, delivery_days, images')
+    .select('id, sku, slug, name, category, subcategory, stock, price_cents, original_price_cents, status, badge, description, long_description, delivery_days, weight_kg, width_cm, depth_cm, height_cm, images')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -169,6 +192,10 @@ export async function POST(request: Request) {
     description?: string;
     longDescription?: string;
     deliveryDays?: string;
+    weightKg?: number;
+    widthCm?: number;
+    depthCm?: number;
+    heightCm?: number;
   };
 
   const name = String(payload.name ?? '').trim();
@@ -191,6 +218,10 @@ export async function POST(request: Request) {
     String(payload.longDescription ?? '').trim() ||
     description;
   const deliveryDays = String(payload.deliveryDays ?? '').trim() || '7-10 business days';
+  const weightKg = toSafeMeasure(payload.weightKg);
+  const widthCm = toSafeMeasure(payload.widthCm);
+  const depthCm = toSafeMeasure(payload.depthCm);
+  const heightCm = toSafeMeasure(payload.heightCm);
 
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
@@ -213,8 +244,12 @@ export async function POST(request: Request) {
       colors: [],
       features: [],
       delivery_days: deliveryDays,
+      weight_kg: weightKg,
+      width_cm: widthCm,
+      depth_cm: depthCm,
+      height_cm: heightCm,
     })
-    .select('id, sku, slug, name, category, subcategory, stock, price_cents, original_price_cents, status, badge, description, long_description, delivery_days, images')
+    .select('id, sku, slug, name, category, subcategory, stock, price_cents, original_price_cents, status, badge, description, long_description, delivery_days, weight_kg, width_cm, depth_cm, height_cm, images')
     .single();
 
   if (error || !data) {

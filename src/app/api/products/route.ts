@@ -57,6 +57,12 @@ export async function GET() {
     const products = fallbackProducts.map((product) => ({
       ...product,
       images: product.images.filter((url) => isRenderableImageUrl(url)),
+      weightKg: Number(product.weightKg ?? 0),
+      dimensions: {
+        widthCm: Number(product.dimensions?.widthCm ?? 0),
+        depthCm: Number(product.dimensions?.depthCm ?? 0),
+        heightCm: Number(product.dimensions?.heightCm ?? 0),
+      },
     }));
 
     return NextResponse.json({ products });
@@ -65,7 +71,7 @@ export async function GET() {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from('products')
-    .select('id, slug, name, category, subcategory, price_cents, original_price_cents, rating, review_count, badge, description, long_description, images, colors, sizes, fabrics, in_stock, is_customizable, delivery_days, features')
+    .select('id, slug, name, category, subcategory, price_cents, original_price_cents, rating, review_count, badge, description, long_description, images, colors, sizes, fabrics, in_stock, is_customizable, delivery_days, weight_kg, width_cm, depth_cm, height_cm, features')
     .eq('status', 'active')
     .order('created_at', { ascending: false });
 
@@ -96,6 +102,12 @@ export async function GET() {
     inStock: row.in_stock,
     isCustomizable: row.is_customizable,
     deliveryDays: row.delivery_days,
+    weightKg: Number(row.weight_kg ?? 0),
+    dimensions: {
+      widthCm: Number(row.width_cm ?? 0),
+      depthCm: Number(row.depth_cm ?? 0),
+      heightCm: Number(row.height_cm ?? 0),
+    },
     features: row.features ?? [],
   }));
 

@@ -35,6 +35,10 @@ interface AdminProductRow {
   description: string;
   longDescription: string;
   deliveryDays: string;
+  weightKg: number;
+  widthCm: number;
+  depthCm: number;
+  heightCm: number;
   status: AdminStatus;
   images: CloudinaryImageAsset[];
   primaryImage: string | null;
@@ -55,6 +59,10 @@ type ProductPatchPayload = {
   description: string;
   longDescription: string;
   deliveryDays: string;
+  weightKg: string;
+  widthCm: string;
+  depthCm: string;
+  heightCm: string;
 };
 
 const defaultNewProduct: ProductPatchPayload = {
@@ -71,7 +79,26 @@ const defaultNewProduct: ProductPatchPayload = {
   description: '',
   longDescription: '',
   deliveryDays: '7-10 business days',
+  weightKg: '',
+  widthCm: '',
+  depthCm: '',
+  heightCm: '',
 };
+
+function toSafeMeasure(value: unknown): number {
+  const parsed =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number(value)
+        : Number.NaN;
+
+  if (!Number.isFinite(parsed)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.round(parsed * 100) / 100);
+}
 
 function clampOfferPercentage(value: number): number {
   if (!Number.isFinite(value)) {
@@ -116,6 +143,10 @@ function normalizeProductRow(row: AdminProductRow): AdminProductRow {
     description: row.description ?? '',
     longDescription: row.longDescription ?? '',
     deliveryDays: row.deliveryDays?.trim() || '7-10 business days',
+    weightKg: toSafeMeasure(row.weightKg),
+    widthCm: toSafeMeasure(row.widthCm),
+    depthCm: toSafeMeasure(row.depthCm),
+    heightCm: toSafeMeasure(row.heightCm),
     images: Array.isArray(row.images) ? row.images : [],
     primaryImage: row.primaryImage ?? null,
     imageCount: Number.isFinite(row.imageCount) ? row.imageCount : row.images?.length ?? 0,
@@ -137,6 +168,10 @@ function buildSavePayload(product: AdminProductRow) {
     description: product.description.trim(),
     longDescription: product.longDescription.trim(),
     deliveryDays: product.deliveryDays.trim() || '7-10 business days',
+    weightKg: toSafeMeasure(product.weightKg),
+    widthCm: toSafeMeasure(product.widthCm),
+    depthCm: toSafeMeasure(product.depthCm),
+    heightCm: toSafeMeasure(product.heightCm),
     images: product.images,
   };
 }
@@ -426,6 +461,10 @@ export default function ProductsAdminPage() {
           offerPercentage,
           stock: Number(newProduct.stock || 0),
           deliveryDays: newProduct.deliveryDays,
+          weightKg: Number(newProduct.weightKg || 0),
+          widthCm: Number(newProduct.widthCm || 0),
+          depthCm: Number(newProduct.depthCm || 0),
+          heightCm: Number(newProduct.heightCm || 0),
           description: newProduct.description,
           longDescription: newProduct.longDescription,
         }),
@@ -593,6 +632,46 @@ export default function ProductsAdminPage() {
               onChange={(e) => setNewProduct((prev) => ({ ...prev, deliveryDays: e.target.value }))}
             />
           </div>
+          <div className={styles.formRow}>
+            <label className={styles.label}>Weight (kg)</label>
+            <input
+              className={styles.input}
+              inputMode="decimal"
+              placeholder="0"
+              value={newProduct.weightKg}
+              onChange={(e) => setNewProduct((prev) => ({ ...prev, weightKg: e.target.value }))}
+            />
+          </div>
+          <div className={styles.formRow}>
+            <label className={styles.label}>Width (cm)</label>
+            <input
+              className={styles.input}
+              inputMode="decimal"
+              placeholder="0"
+              value={newProduct.widthCm}
+              onChange={(e) => setNewProduct((prev) => ({ ...prev, widthCm: e.target.value }))}
+            />
+          </div>
+          <div className={styles.formRow}>
+            <label className={styles.label}>Depth (cm)</label>
+            <input
+              className={styles.input}
+              inputMode="decimal"
+              placeholder="0"
+              value={newProduct.depthCm}
+              onChange={(e) => setNewProduct((prev) => ({ ...prev, depthCm: e.target.value }))}
+            />
+          </div>
+          <div className={styles.formRow}>
+            <label className={styles.label}>Height (cm)</label>
+            <input
+              className={styles.input}
+              inputMode="decimal"
+              placeholder="0"
+              value={newProduct.heightCm}
+              onChange={(e) => setNewProduct((prev) => ({ ...prev, heightCm: e.target.value }))}
+            />
+          </div>
           <div className={styles.formRow} style={{ gridColumn: '1 / -1' }}>
             <label className={styles.label}>Short Description</label>
             <textarea
@@ -633,6 +712,7 @@ export default function ProductsAdminPage() {
                 <th>Category</th>
                 <th>Media</th>
                 <th>Stock</th>
+                <th>Specs</th>
                 <th>Price</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -739,6 +819,64 @@ export default function ProductsAdminPage() {
                         );
                       }}
                     />
+                  </td>
+                  <td>
+                    <div style={{ display: 'grid', gap: '0.4rem', minWidth: '170px' }}>
+                      <input
+                        className={styles.input}
+                        inputMode="decimal"
+                        placeholder="Weight kg"
+                        value={String(product.weightKg)}
+                        onChange={(e) => {
+                          const next = toSafeMeasure(e.target.value);
+                          setLocalProduct(product.id, (current) => ({
+                            ...current,
+                            weightKg: next,
+                          }));
+                        }}
+                      />
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.35rem' }}>
+                        <input
+                          className={styles.input}
+                          inputMode="decimal"
+                          placeholder="W"
+                          value={String(product.widthCm)}
+                          onChange={(e) => {
+                            const next = toSafeMeasure(e.target.value);
+                            setLocalProduct(product.id, (current) => ({
+                              ...current,
+                              widthCm: next,
+                            }));
+                          }}
+                        />
+                        <input
+                          className={styles.input}
+                          inputMode="decimal"
+                          placeholder="D"
+                          value={String(product.depthCm)}
+                          onChange={(e) => {
+                            const next = toSafeMeasure(e.target.value);
+                            setLocalProduct(product.id, (current) => ({
+                              ...current,
+                              depthCm: next,
+                            }));
+                          }}
+                        />
+                        <input
+                          className={styles.input}
+                          inputMode="decimal"
+                          placeholder="H"
+                          value={String(product.heightCm)}
+                          onChange={(e) => {
+                            const next = toSafeMeasure(e.target.value);
+                            setLocalProduct(product.id, (current) => ({
+                              ...current,
+                              heightCm: next,
+                            }));
+                          }}
+                        />
+                      </div>
+                    </div>
                   </td>
                   <td>
                     <div style={{ display: 'grid', gap: '0.45rem', minWidth: '180px' }}>

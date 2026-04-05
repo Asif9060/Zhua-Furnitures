@@ -20,6 +20,12 @@ export interface Product {
   inStock: boolean;
   isCustomizable: boolean;
   deliveryDays: string;
+  weightKg?: number;
+  dimensions?: {
+    widthCm?: number;
+    depthCm?: number;
+    heightCm?: number;
+  };
   features: string[];
 }
 
