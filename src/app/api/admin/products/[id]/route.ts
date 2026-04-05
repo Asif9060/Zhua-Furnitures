@@ -2,15 +2,125 @@ import { NextResponse } from 'next/server';
 import { ensureAdminApiAccess } from '@/lib/admin-api-auth';
 import {
   displayCategory,
+  displayProductBadge,
   displayProductStatus,
   parseCategory,
+  parseProductBadge,
   parseProductStatus,
+  slugify,
 } from '@/lib/admin-api';
 import { destroyCloudinaryImage } from '@/lib/cloudinary';
 import { normalizeCloudinaryImageAssets } from '@/lib/media';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
+
+function clampOfferPercentage(value: unknown, fallback = 0): number {
+  const parsed =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number(value)
+        : Number.NaN;
+
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+
+  return Math.min(100, Math.max(0, Math.round(parsed * 100) / 100));
+}
+
+function toPriceCents(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.round(value * 100));
+}
+
+function applyOfferPricing(basePrice: number, offerPercentage: number): {
+  priceCents: number;
+  originalPriceCents: number | null;
+} {
+  const basePriceCents = toPriceCents(basePrice);
+  const safeOffer = clampOfferPercentage(offerPercentage, 0);
+
+  if (safeOffer <= 0 || basePriceCents <= 0) {
+    return {
+      priceCents: basePriceCents,
+      originalPriceCents: null,
+    };
+  }
+
+  const discountedCents = Math.max(
+    0,
+    Math.round(basePriceCents * ((100 - safeOffer) / 100))
+  );
+
+  return {
+    priceCents: discountedCents,
+    originalPriceCents: basePriceCents,
+  };
+}
+
+function calculateOfferPercentage(priceCents: number, originalPriceCents: number | null): number {
+  if (
+    typeof originalPriceCents !== 'number' ||
+    originalPriceCents <= 0 ||
+    priceCents >= originalPriceCents
+  ) {
+    return 0;
+  }
+
+  return Math.round(((originalPriceCents - priceCents) / originalPriceCents) * 10000) / 100;
+}
+
+function toAdminProductRow(product: {
+  id: string;
+  sku: string;
+  slug: string;
+  name: string;
+  category: 'furniture' | 'curtains' | 'accessories';
+  subcategory: string;
+  stock: number;
+  price_cents: number;
+  original_price_cents: number | null;
+  status: 'active' | 'draft' | 'archived';
+  badge: 'new' | 'sale' | 'custom' | 'bestseller' | null;
+  description: string;
+  long_description: string;
+  delivery_days: string;
+  images: unknown;
+}) {
+  const images = normalizeCloudinaryImageAssets(product.images);
+  const offerPercentage = calculateOfferPercentage(product.price_cents, product.original_price_cents);
+  const hasOffer = offerPercentage > 0;
+  const basePriceCents = hasOffer && typeof product.original_price_cents === 'number'
+    ? product.original_price_cents
+    : product.price_cents;
+
+  return {
+    id: product.id,
+    sku: product.sku,
+    slug: product.slug,
+    name: product.name,
+    category: displayCategory(product.category),
+    subcategory: product.subcategory,
+    stock: product.stock,
+    price: Math.round(basePriceCents / 100),
+    offerPrice: Math.round(product.price_cents / 100),
+    originalPrice: hasOffer ? Math.round(basePriceCents / 100) : null,
+    offerPercentage,
+    badge: product.badge ? displayProductBadge(product.badge) : null,
+    status: displayProductStatus(product.status),
+    description: product.description,
+    longDescription: product.long_description,
+    deliveryDays: product.delivery_days,
+    images,
+    primaryImage: images[0]?.secureUrl ?? null,
+    imageCount: images.length,
+  };
+}
 
 export async function PATCH(
   request: Request,
@@ -24,20 +134,38 @@ export async function PATCH(
   const { id } = await params;
   const payload = (await request.json()) as {
     name?: string;
+    slug?: string;
+    sku?: string;
     category?: string;
+    subcategory?: string;
     stock?: number;
     price?: number;
+    offerPercentage?: number;
     status?: string;
+    badge?: string | null;
+    description?: string;
+    longDescription?: string;
+    deliveryDays?: string;
     images?: unknown;
   };
+
+  const supabase = createSupabaseAdminClient();
 
   const updateData: {
     name?: string;
     category?: 'furniture' | 'curtains' | 'accessories';
+    subcategory?: string;
+    slug?: string;
+    sku?: string;
     stock?: number;
     in_stock?: boolean;
     price_cents?: number;
+    original_price_cents?: number | null;
     status?: 'active' | 'draft' | 'archived';
+    badge?: 'new' | 'sale' | 'custom' | 'bestseller' | null;
+    description?: string;
+    long_description?: string;
+    delivery_days?: string;
     images?: unknown;
   } = {};
 
@@ -45,8 +173,20 @@ export async function PATCH(
     updateData.name = payload.name.trim();
   }
 
+  if (typeof payload.slug === 'string' && payload.slug.trim()) {
+    updateData.slug = slugify(payload.slug);
+  }
+
+  if (typeof payload.sku === 'string' && payload.sku.trim()) {
+    updateData.sku = payload.sku.trim();
+  }
+
   if (typeof payload.category === 'string') {
     updateData.category = parseCategory(payload.category);
+  }
+
+  if (typeof payload.subcategory === 'string' && payload.subcategory.trim()) {
+    updateData.subcategory = payload.subcategory.trim();
   }
 
   if (typeof payload.stock === 'number' && Number.isFinite(payload.stock)) {
@@ -54,46 +194,93 @@ export async function PATCH(
     updateData.in_stock = updateData.stock > 0;
   }
 
-  if (typeof payload.price === 'number' && Number.isFinite(payload.price)) {
-    updateData.price_cents = Math.max(0, Math.round(payload.price * 100));
-  }
-
   if (typeof payload.status === 'string') {
     updateData.status = parseProductStatus(payload.status);
+  }
+
+  if (payload.badge !== undefined) {
+    if (payload.badge === null || payload.badge === '') {
+      updateData.badge = null;
+    } else {
+      updateData.badge = parseProductBadge(payload.badge);
+    }
+  }
+
+  if (typeof payload.description === 'string' && payload.description.trim()) {
+    updateData.description = payload.description.trim();
+  }
+
+  if (typeof payload.longDescription === 'string') {
+    updateData.long_description = payload.longDescription.trim();
+  }
+
+  if (typeof payload.deliveryDays === 'string' && payload.deliveryDays.trim()) {
+    updateData.delivery_days = payload.deliveryDays.trim();
+  }
+
+  if (
+    (typeof payload.price === 'number' && Number.isFinite(payload.price)) ||
+    payload.offerPercentage !== undefined
+  ) {
+    const { data: current, error: currentError } = await supabase
+      .from('products')
+      .select('price_cents, original_price_cents, badge')
+      .eq('id', id)
+      .single();
+
+    if (currentError || !current) {
+      return NextResponse.json(
+        { error: currentError?.message ?? 'Could not load current pricing.' },
+        { status: 500 }
+      );
+    }
+
+    const currentBasePrice = (current.original_price_cents ?? current.price_cents) / 100;
+    const currentOfferPercentage = calculateOfferPercentage(
+      current.price_cents,
+      current.original_price_cents
+    );
+    const nextBasePrice =
+      typeof payload.price === 'number' && Number.isFinite(payload.price)
+        ? Math.max(0, payload.price)
+        : currentBasePrice;
+    const nextOfferPercentage =
+      payload.offerPercentage !== undefined
+        ? clampOfferPercentage(payload.offerPercentage, currentOfferPercentage)
+        : currentOfferPercentage;
+    const pricing = applyOfferPricing(nextBasePrice, nextOfferPercentage);
+
+    updateData.price_cents = pricing.priceCents;
+    updateData.original_price_cents = pricing.originalPriceCents;
+
+    if (payload.badge === undefined) {
+      if (nextOfferPercentage > 0 && current.badge === null) {
+        updateData.badge = 'sale';
+      }
+
+      if (nextOfferPercentage <= 0 && current.badge === 'sale') {
+        updateData.badge = null;
+      }
+    }
   }
 
   if (payload.images !== undefined) {
     updateData.images = normalizeCloudinaryImageAssets(payload.images);
   }
 
-  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from('products')
     .update(updateData)
     .eq('id', id)
-    .select('id, sku, slug, name, category, stock, price_cents, status, images')
+    .select('id, sku, slug, name, category, subcategory, stock, price_cents, original_price_cents, status, badge, description, long_description, delivery_days, images')
     .single();
 
   if (error || !data) {
     return NextResponse.json({ error: error?.message ?? 'Could not update product.' }, { status: 500 });
   }
 
-  const images = normalizeCloudinaryImageAssets(data.images);
-
   return NextResponse.json({
-    product: {
-      id: data.id,
-      sku: data.sku,
-      slug: data.slug,
-      name: data.name,
-      category: displayCategory(data.category),
-      stock: data.stock,
-      price: Math.round(data.price_cents / 100),
-      status: displayProductStatus(data.status),
-      images,
-      primaryImage: images[0]?.secureUrl ?? null,
-      imageCount: images.length,
-    },
+    product: toAdminProductRow(data),
   });
 }
 

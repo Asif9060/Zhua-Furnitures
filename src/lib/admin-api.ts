@@ -1,5 +1,6 @@
 export type ProductCategory = 'furniture' | 'curtains' | 'accessories';
 export type ProductStatus = 'active' | 'draft' | 'archived';
+export type ProductBadge = 'new' | 'sale' | 'custom' | 'bestseller';
 export type FulfillmentStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 export type PaymentStatus = 'pending' | 'paid' | 'partial' | 'failed' | 'placeholder';
 
@@ -13,6 +14,13 @@ const productStatusMap: Record<ProductStatus, string> = {
   active: 'Active',
   draft: 'Draft',
   archived: 'Archived',
+};
+
+const productBadgeMap: Record<ProductBadge, string> = {
+  new: 'new',
+  sale: 'sale',
+  custom: 'custom',
+  bestseller: 'bestseller',
 };
 
 const fulfillmentStatusMap: Record<FulfillmentStatus, string> = {
@@ -55,6 +63,28 @@ export function parseProductStatus(value: string): ProductStatus {
   }
 
   return 'draft';
+}
+
+export function displayProductBadge(badge: ProductBadge): string {
+  return productBadgeMap[badge];
+}
+
+export function parseProductBadge(value: unknown): ProductBadge | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (
+    normalized === 'new' ||
+    normalized === 'sale' ||
+    normalized === 'custom' ||
+    normalized === 'bestseller'
+  ) {
+    return normalized;
+  }
+
+  return null;
 }
 
 export function displayFulfillmentStatus(status: FulfillmentStatus): string {

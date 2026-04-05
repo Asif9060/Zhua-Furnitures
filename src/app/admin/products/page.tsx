@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { formatCurrency } from '@/lib/admin-data';
 import styles from '../admin-pages.module.css';
 
+type AdminCategory = 'Furniture' | 'Curtains' | 'Accessories';
+type AdminStatus = 'Active' | 'Draft' | 'Archived';
+type AdminBadge = 'new' | 'sale' | 'custom' | 'bestseller' | null;
+
 interface CloudinaryImageAsset {
   publicId: string;
   secureUrl: string;
@@ -20,23 +24,122 @@ interface AdminProductRow {
   sku: string;
   slug: string;
   name: string;
-  category: 'Furniture' | 'Curtains' | 'Accessories';
+  category: AdminCategory;
+  subcategory: string;
   stock: number;
   price: number;
-  status: 'Active' | 'Draft' | 'Archived';
+  offerPrice: number;
+  originalPrice: number | null;
+  offerPercentage: number;
+  badge: AdminBadge;
+  description: string;
+  longDescription: string;
+  deliveryDays: string;
+  status: AdminStatus;
   images: CloudinaryImageAsset[];
   primaryImage: string | null;
   imageCount: number;
 }
 
-type NewProductState = {
+type ProductPatchPayload = {
+  sku: string;
+  slug: string;
   name: string;
-  category: 'Furniture' | 'Curtains' | 'Accessories';
+  category: AdminCategory;
+  subcategory: string;
+  status: AdminStatus;
+  badge: AdminBadge;
   price: string;
+  offerPercentage: string;
   stock: string;
   description: string;
   longDescription: string;
+  deliveryDays: string;
 };
+
+const defaultNewProduct: ProductPatchPayload = {
+  sku: '',
+  slug: '',
+  name: '',
+  category: 'Furniture',
+  subcategory: 'General',
+  status: 'Active',
+  badge: null,
+  price: '',
+  offerPercentage: '',
+  stock: '',
+  description: '',
+  longDescription: '',
+  deliveryDays: '7-10 business days',
+};
+
+function clampOfferPercentage(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, Math.round(value * 100) / 100));
+}
+
+function calculateOfferPrice(basePrice: number, offerPercentage: number): number {
+  const safeBasePrice = Number.isFinite(basePrice) ? Math.max(0, basePrice) : 0;
+  const safeOfferPercentage = clampOfferPercentage(offerPercentage);
+
+  return Math.max(0, Math.round(safeBasePrice * ((100 - safeOfferPercentage) / 100)));
+}
+
+function normalizeProductRow(row: AdminProductRow): AdminProductRow {
+  const safeBasePrice = Number.isFinite(row.price) ? Math.max(0, row.price) : 0;
+  const safeOfferPercentage = clampOfferPercentage(Number(row.offerPercentage ?? 0));
+  const nextOfferPrice =
+    Number.isFinite(row.offerPrice) && row.offerPrice >= 0
+      ? Math.round(row.offerPrice)
+      : calculateOfferPrice(safeBasePrice, safeOfferPercentage);
+
+  const nextBadge =
+    safeOfferPercentage > 0
+      ? row.badge ?? 'sale'
+      : row.badge === 'sale'
+        ? null
+        : row.badge;
+
+  return {
+    ...row,
+    sku: row.sku ?? '',
+    slug: row.slug ?? '',
+    subcategory: row.subcategory?.trim() || 'General',
+    price: Math.round(safeBasePrice),
+    offerPrice: nextOfferPrice,
+    originalPrice: safeOfferPercentage > 0 ? Math.round(safeBasePrice) : null,
+    offerPercentage: safeOfferPercentage,
+    badge: nextBadge,
+    description: row.description ?? '',
+    longDescription: row.longDescription ?? '',
+    deliveryDays: row.deliveryDays?.trim() || '7-10 business days',
+    images: Array.isArray(row.images) ? row.images : [],
+    primaryImage: row.primaryImage ?? null,
+    imageCount: Number.isFinite(row.imageCount) ? row.imageCount : row.images?.length ?? 0,
+  };
+}
+
+function buildSavePayload(product: AdminProductRow) {
+  return {
+    sku: product.sku.trim(),
+    slug: product.slug.trim(),
+    name: product.name.trim(),
+    category: product.category,
+    subcategory: product.subcategory.trim() || 'General',
+    status: product.status,
+    badge: product.badge,
+    price: Math.max(0, Math.round(product.price)),
+    offerPercentage: clampOfferPercentage(product.offerPercentage),
+    stock: Math.max(0, Math.round(product.stock)),
+    description: product.description.trim(),
+    longDescription: product.longDescription.trim(),
+    deliveryDays: product.deliveryDays.trim() || '7-10 business days',
+    images: product.images,
+  };
+}
 
 export default function ProductsAdminPage() {
   const [query, setQuery] = useState('');
@@ -46,14 +149,7 @@ export default function ProductsAdminPage() {
   const [error, setError] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
-  const [newProduct, setNewProduct] = useState<NewProductState>({
-    name: '',
-    category: 'Furniture',
-    price: '',
-    stock: '',
-    description: '',
-    longDescription: '',
-  });
+  const [newProduct, setNewProduct] = useState<ProductPatchPayload>(defaultNewProduct);
 
   const loadProducts = async () => {
     setLoading(true);
@@ -67,7 +163,7 @@ export default function ProductsAdminPage() {
         throw new Error(data.error ?? 'Could not load products.');
       }
 
-      setProducts(data.products ?? []);
+      setProducts((data.products ?? []).map((row) => normalizeProductRow(row)));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not load products.';
       setError(message);
@@ -88,7 +184,43 @@ export default function ProductsAdminPage() {
     });
   }, [products, query, category]);
 
-  const updateProduct = async (id: string, partial: Partial<AdminProductRow>) => {
+  const setLocalProduct = (
+    id: string,
+    updater: (current: AdminProductRow) => AdminProductRow
+  ) => {
+    setProducts((prev) =>
+      prev.map((product) =>
+        product.id === id ? normalizeProductRow(updater(product)) : product
+      )
+    );
+  };
+
+  const applyOfferToProduct = (
+    product: AdminProductRow,
+    nextBasePrice: number,
+    nextOfferPercentage: number
+  ): AdminProductRow => {
+    const safeBasePrice = Number.isFinite(nextBasePrice) ? Math.max(0, Math.round(nextBasePrice)) : product.price;
+    const safeOfferPercentage = clampOfferPercentage(nextOfferPercentage);
+    const nextOfferPrice = calculateOfferPrice(safeBasePrice, safeOfferPercentage);
+    const nextBadge =
+      safeOfferPercentage > 0
+        ? product.badge ?? 'sale'
+        : product.badge === 'sale'
+          ? null
+          : product.badge;
+
+    return {
+      ...product,
+      price: safeBasePrice,
+      offerPercentage: safeOfferPercentage,
+      offerPrice: nextOfferPrice,
+      originalPrice: safeOfferPercentage > 0 ? safeBasePrice : null,
+      badge: nextBadge,
+    };
+  };
+
+  const updateProduct = async (id: string, partial: Record<string, unknown>) => {
     setSavingId(id);
     setError('');
 
@@ -104,7 +236,11 @@ export default function ProductsAdminPage() {
         throw new Error(data.error ?? 'Could not update product.');
       }
 
-      setProducts((prev) => prev.map((product) => (product.id === id ? data.product! : product)));
+      setProducts((prev) =>
+        prev.map((product) =>
+          product.id === id ? normalizeProductRow(data.product!) : product
+        )
+      );
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not update product.';
       setError(message);
@@ -265,15 +401,31 @@ export default function ProductsAdminPage() {
   const createProduct = async () => {
     setError('');
 
+    if (!newProduct.name.trim()) {
+      setError('Product name is required.');
+      return;
+    }
+
+    const basePrice = Number(newProduct.price || 0);
+    const offerPercentage = clampOfferPercentage(Number(newProduct.offerPercentage || 0));
+    const badge = newProduct.badge ?? (offerPercentage > 0 ? 'sale' : null);
+
     try {
       const res = await fetch('/api/admin/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: newProduct.name,
+          slug: newProduct.slug,
+          sku: newProduct.sku,
           category: newProduct.category,
-          price: Number(newProduct.price || 0),
+          subcategory: newProduct.subcategory,
+          status: newProduct.status,
+          badge,
+          price: Number.isFinite(basePrice) ? Math.max(0, basePrice) : 0,
+          offerPercentage,
           stock: Number(newProduct.stock || 0),
+          deliveryDays: newProduct.deliveryDays,
           description: newProduct.description,
           longDescription: newProduct.longDescription,
         }),
@@ -284,15 +436,8 @@ export default function ProductsAdminPage() {
         throw new Error(data.error ?? 'Could not create product.');
       }
 
-      setProducts((prev) => [data.product!, ...prev]);
-      setNewProduct({
-        name: '',
-        category: 'Furniture',
-        price: '',
-        stock: '',
-        description: '',
-        longDescription: '',
-      });
+      setProducts((prev) => [normalizeProductRow(data.product!), ...prev]);
+      setNewProduct(defaultNewProduct);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not create product.';
       setError(message);
@@ -332,6 +477,24 @@ export default function ProductsAdminPage() {
             />
           </div>
           <div className={styles.formRow}>
+            <label className={styles.label}>New Product Slug (Optional)</label>
+            <input
+              className={styles.input}
+              placeholder="auto-generated-when-empty"
+              value={newProduct.slug}
+              onChange={(e) => setNewProduct((prev) => ({ ...prev, slug: e.target.value }))}
+            />
+          </div>
+          <div className={styles.formRow}>
+            <label className={styles.label}>New Product SKU (Optional)</label>
+            <input
+              className={styles.input}
+              placeholder="ZH-XXXX-000"
+              value={newProduct.sku}
+              onChange={(e) => setNewProduct((prev) => ({ ...prev, sku: e.target.value }))}
+            />
+          </div>
+          <div className={styles.formRow}>
             <label className={styles.label}>New Product Category</label>
             <select
               className={styles.select}
@@ -349,12 +512,31 @@ export default function ProductsAdminPage() {
             </select>
           </div>
           <div className={styles.formRow}>
-            <label className={styles.label}>New Product Price (R)</label>
+            <label className={styles.label}>Subcategory</label>
+            <input
+              className={styles.input}
+              placeholder="General"
+              value={newProduct.subcategory}
+              onChange={(e) => setNewProduct((prev) => ({ ...prev, subcategory: e.target.value }))}
+            />
+          </div>
+          <div className={styles.formRow}>
+            <label className={styles.label}>Original Price (R)</label>
             <input
               className={styles.input}
               inputMode="numeric"
               value={newProduct.price}
               onChange={(e) => setNewProduct((prev) => ({ ...prev, price: e.target.value }))}
+            />
+          </div>
+          <div className={styles.formRow}>
+            <label className={styles.label}>Offer Percentage (%)</label>
+            <input
+              className={styles.input}
+              inputMode="decimal"
+              placeholder="0"
+              value={newProduct.offerPercentage}
+              onChange={(e) => setNewProduct((prev) => ({ ...prev, offerPercentage: e.target.value }))}
             />
           </div>
           <div className={styles.formRow}>
@@ -364,6 +546,51 @@ export default function ProductsAdminPage() {
               inputMode="numeric"
               value={newProduct.stock}
               onChange={(e) => setNewProduct((prev) => ({ ...prev, stock: e.target.value }))}
+            />
+          </div>
+          <div className={styles.formRow}>
+            <label className={styles.label}>Status</label>
+            <select
+              className={styles.select}
+              value={newProduct.status}
+              onChange={(e) =>
+                setNewProduct((prev) => ({
+                  ...prev,
+                  status: e.target.value as AdminStatus,
+                }))
+              }
+            >
+              <option>Active</option>
+              <option>Draft</option>
+              <option>Archived</option>
+            </select>
+          </div>
+          <div className={styles.formRow}>
+            <label className={styles.label}>Badge</label>
+            <select
+              className={styles.select}
+              value={newProduct.badge ?? ''}
+              onChange={(e) =>
+                setNewProduct((prev) => ({
+                  ...prev,
+                  badge: e.target.value ? (e.target.value as Exclude<AdminBadge, null>) : null,
+                }))
+              }
+            >
+              <option value="">None</option>
+              <option value="new">new</option>
+              <option value="sale">sale</option>
+              <option value="custom">custom</option>
+              <option value="bestseller">bestseller</option>
+            </select>
+          </div>
+          <div className={styles.formRow}>
+            <label className={styles.label}>Delivery Days</label>
+            <input
+              className={styles.input}
+              placeholder="7-10 business days"
+              value={newProduct.deliveryDays}
+              onChange={(e) => setNewProduct((prev) => ({ ...prev, deliveryDays: e.target.value }))}
             />
           </div>
           <div className={styles.formRow} style={{ gridColumn: '1 / -1' }}>
@@ -414,9 +641,70 @@ export default function ProductsAdminPage() {
             <tbody>
               {filtered.map((product) => (
                 <tr key={product.id}>
-                  <td>{product.sku}</td>
-                  <td>{product.name}</td>
-                  <td>{product.category}</td>
+                  <td>
+                    <input
+                      className={styles.input}
+                      value={product.sku}
+                      onChange={(e) =>
+                        setLocalProduct(product.id, (current) => ({
+                          ...current,
+                          sku: e.target.value,
+                        }))
+                      }
+                    />
+                  </td>
+                  <td>
+                    <div style={{ display: 'grid', gap: '0.4rem', minWidth: '220px' }}>
+                      <input
+                        className={styles.input}
+                        value={product.name}
+                        onChange={(e) =>
+                          setLocalProduct(product.id, (current) => ({
+                            ...current,
+                            name: e.target.value,
+                          }))
+                        }
+                      />
+                      <input
+                        className={styles.input}
+                        value={product.slug}
+                        onChange={(e) =>
+                          setLocalProduct(product.id, (current) => ({
+                            ...current,
+                            slug: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{ display: 'grid', gap: '0.4rem', minWidth: '180px' }}>
+                      <select
+                        className={styles.select}
+                        value={product.category}
+                        onChange={(e) =>
+                          setLocalProduct(product.id, (current) => ({
+                            ...current,
+                            category: e.target.value as AdminCategory,
+                          }))
+                        }
+                      >
+                        <option>Furniture</option>
+                        <option>Curtains</option>
+                        <option>Accessories</option>
+                      </select>
+                      <input
+                        className={styles.input}
+                        value={product.subcategory}
+                        onChange={(e) =>
+                          setLocalProduct(product.id, (current) => ({
+                            ...current,
+                            subcategory: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </td>
                   <td>
                     <div style={{ display: 'grid', gap: '0.42rem' }}>
                       {product.primaryImage ? (
@@ -453,68 +741,86 @@ export default function ProductsAdminPage() {
                     />
                   </td>
                   <td>
-                    <input
-                      className={styles.input}
-                      style={{ maxWidth: '130px' }}
-                      inputMode="numeric"
-                      value={String(product.price)}
-                      onChange={(e) => {
-                        const price = Number(e.target.value || 0);
-                        setProducts((prev) =>
-                          prev.map((row) =>
-                            row.id === product.id
-                              ? {
-                                  ...row,
-                                  price: Number.isFinite(price) ? price : row.price,
-                                }
-                              : row
-                          )
-                        );
-                      }}
-                    />
-                    <div style={{ color: '#a9b7c9', fontSize: '0.72rem', marginTop: '0.3rem' }}>
-                      {formatCurrency(product.price)}
+                    <div style={{ display: 'grid', gap: '0.45rem', minWidth: '180px' }}>
+                      <input
+                        className={styles.input}
+                        inputMode="numeric"
+                        value={String(product.price)}
+                        onChange={(e) => {
+                          const nextPrice = Number(e.target.value || 0);
+                          setLocalProduct(product.id, (current) =>
+                            applyOfferToProduct(
+                              current,
+                              Number.isFinite(nextPrice) ? nextPrice : current.price,
+                              current.offerPercentage
+                            )
+                          );
+                        }}
+                      />
+                      <input
+                        className={styles.input}
+                        inputMode="decimal"
+                        placeholder="Offer %"
+                        value={String(product.offerPercentage)}
+                        onChange={(e) => {
+                          const nextOffer = Number(e.target.value || 0);
+                          setLocalProduct(product.id, (current) =>
+                            applyOfferToProduct(
+                              current,
+                              current.price,
+                              Number.isFinite(nextOffer) ? nextOffer : current.offerPercentage
+                            )
+                          );
+                        }}
+                      />
+                    </div>
+                    <div style={{ color: '#a9b7c9', fontSize: '0.72rem', marginTop: '0.3rem', display: 'grid', gap: '0.2rem' }}>
+                      <span>Original: {formatCurrency(product.price)}</span>
+                      <span>Offer Price: {formatCurrency(product.offerPrice)}</span>
                     </div>
                   </td>
                   <td>
-                    <span
-                      className={`${styles.badge} ${
-                        product.status === 'Active'
-                          ? styles.badgeSuccess
-                          : product.status === 'Draft'
-                            ? styles.badgeWarn
-                            : styles.badgeDanger
-                      }`}
-                    >
-                      {product.status}
-                    </span>
-                  </td>
-                  <td>
-                    <div className={styles.inlineActions}>
+                    <div style={{ display: 'grid', gap: '0.4rem', minWidth: '145px' }}>
                       <select
                         className={styles.select}
                         value={product.status}
                         onChange={(e) =>
-                          setProducts((prev) =>
-                            prev.map((row) =>
-                              row.id === product.id
-                                ? {
-                                    ...row,
-                                    status: e.target.value as 'Active' | 'Draft' | 'Archived',
-                                  }
-                                : row
-                            )
-                          )
+                          setLocalProduct(product.id, (current) => ({
+                            ...current,
+                            status: e.target.value as AdminStatus,
+                          }))
                         }
                       >
                         <option>Active</option>
                         <option>Draft</option>
                         <option>Archived</option>
                       </select>
+                      <select
+                        className={styles.select}
+                        value={product.badge ?? ''}
+                        onChange={(e) =>
+                          setLocalProduct(product.id, (current) => ({
+                            ...current,
+                            badge: e.target.value ? (e.target.value as Exclude<AdminBadge, null>) : null,
+                          }))
+                        }
+                      >
+                        <option value="">No Badge</option>
+                        <option value="new">new</option>
+                        <option value="sale">sale</option>
+                        <option value="custom">custom</option>
+                        <option value="bestseller">bestseller</option>
+                      </select>
+                    </div>
+                  </td>
+                  <td>
+                    <div className={styles.inlineActions}>
                       <button
                         className={styles.ghostButton}
                         disabled={savingId === product.id}
-                        onClick={() => updateProduct(product.id, product)}
+                        onClick={() =>
+                          updateProduct(product.id, buildSavePayload(product))
+                        }
                       >
                         {savingId === product.id ? 'Saving...' : 'Save'}
                       </button>
