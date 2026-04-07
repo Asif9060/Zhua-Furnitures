@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/admin-data';
+import { useToastFeedback } from '@/lib/toast-feedback';
 import styles from '../admin-pages.module.css';
 
 function statusClass(status: string): string {
@@ -13,6 +15,7 @@ function statusClass(status: string): string {
 
 function paymentClass(status: string): string {
   if (status === 'Paid') return `${styles.badge} ${styles.badgeSuccess}`;
+  if (status === 'Awaiting Payment' || status === 'Pending') return `${styles.badge} ${styles.badgeWarn}`;
   if (status === 'Partial') return `${styles.badge} ${styles.badgeWarn}`;
   return `${styles.badge} ${styles.badgeDanger}`;
 }
@@ -24,7 +27,7 @@ interface AdminOrderRow {
   date: string;
   total: number;
   items: number;
-  payment: 'Pending' | 'Paid' | 'Partial' | 'Failed' | 'Placeholder';
+  payment: 'Awaiting Payment' | 'Pending' | 'Paid' | 'Partial' | 'Failed' | 'Placeholder';
   fulfillment: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
 }
 
@@ -33,6 +36,8 @@ export default function OrdersAdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
+
+  useToastFeedback({ error });
 
   const loadOrders = async () => {
     setLoading(true);
@@ -79,6 +84,7 @@ export default function OrdersAdminPage() {
       }
 
       setOrders((prev) => prev.map((row) => (row.id === order.id ? data.order! : row)));
+      toast.success('Order updated successfully.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not update order.';
       setError(message);
@@ -131,6 +137,7 @@ export default function OrdersAdminPage() {
                       )
                     }
                   >
+                    <option>Awaiting Payment</option>
                     <option>Pending</option>
                     <option>Paid</option>
                     <option>Partial</option>

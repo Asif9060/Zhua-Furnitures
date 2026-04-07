@@ -5,12 +5,37 @@ const cloudinaryCloudName = process.env.CLOUDINARY_CLOUD_NAME ?? '';
 const cloudinaryApiKey = process.env.CLOUDINARY_API_KEY ?? '';
 const cloudinaryApiSecret = process.env.CLOUDINARY_API_SECRET ?? '';
 const publicCloudinaryCloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? '';
+const payfastMerchantId = process.env.PAYFAST_MERCHANT_ID ?? '';
+const payfastMerchantKey = process.env.PAYFAST_MERCHANT_KEY ?? '';
+const payfastPassphrase = process.env.PAYFAST_PASSPHRASE ?? '';
+const payfastReturnUrl = process.env.PAYFAST_RETURN_URL ?? '';
+const payfastCancelUrl = process.env.PAYFAST_CANCEL_URL ?? '';
+const payfastNotifyUrl = process.env.PAYFAST_NOTIFY_URL ?? '';
+const yocoSecretKey = process.env.YOCO_SECRET_KEY ?? '';
+const yocoWebhookSecret = process.env.YOCO_WEBHOOK_SECRET ?? '';
+const yocoSuccessUrl = process.env.YOCO_SUCCESS_URL ?? '';
+const yocoCancelUrl = process.env.YOCO_CANCEL_URL ?? '';
+const publicPayfastMode = process.env.NEXT_PUBLIC_PAYFAST_MODE ?? 'sandbox';
+const publicYocoMode = process.env.NEXT_PUBLIC_YOCO_MODE ?? 'sandbox';
 
 export const hasPublicSupabaseEnv = Boolean(supabaseUrl && supabaseAnonKey);
 export const hasServiceSupabaseEnv = Boolean(supabaseUrl && supabaseServiceRoleKey);
 export const hasCloudinaryEnv = Boolean(
   cloudinaryCloudName && cloudinaryApiKey && cloudinaryApiSecret
 );
+export const hasPayFastEnv = Boolean(
+  payfastMerchantId &&
+    payfastMerchantKey &&
+    payfastPassphrase &&
+    payfastReturnUrl &&
+    payfastCancelUrl &&
+    payfastNotifyUrl
+);
+export const hasYocoEnv = Boolean(yocoSecretKey && yocoWebhookSecret);
+
+function normalizePaymentMode(value: string): 'sandbox' | 'live' {
+  return value.trim().toLowerCase() === 'live' ? 'live' : 'sandbox';
+}
 
 export function getPublicSupabaseEnv(): { url: string; anonKey: string } {
   if (!hasPublicSupabaseEnv) {
@@ -56,5 +81,49 @@ export function getCloudinaryEnv(): {
     apiKey: cloudinaryApiKey,
     apiSecret: cloudinaryApiSecret,
     publicCloudName: publicCloudinaryCloudName || cloudinaryCloudName,
+  };
+}
+
+export function getPayFastEnv(): {
+  merchantId: string;
+  merchantKey: string;
+  passphrase: string;
+  returnUrl: string;
+  cancelUrl: string;
+  notifyUrl: string;
+  mode: 'sandbox' | 'live';
+} {
+  if (!hasPayFastEnv) {
+    throw new Error('Missing PayFast credentials in environment variables.');
+  }
+
+  return {
+    merchantId: payfastMerchantId,
+    merchantKey: payfastMerchantKey,
+    passphrase: payfastPassphrase,
+    returnUrl: payfastReturnUrl,
+    cancelUrl: payfastCancelUrl,
+    notifyUrl: payfastNotifyUrl,
+    mode: normalizePaymentMode(publicPayfastMode),
+  };
+}
+
+export function getYocoEnv(): {
+  secretKey: string;
+  webhookSecret: string;
+  successUrl: string | null;
+  cancelUrl: string | null;
+  mode: 'sandbox' | 'live';
+} {
+  if (!hasYocoEnv) {
+    throw new Error('Missing Yoco credentials in environment variables.');
+  }
+
+  return {
+    secretKey: yocoSecretKey,
+    webhookSecret: yocoWebhookSecret,
+    successUrl: yocoSuccessUrl || null,
+    cancelUrl: yocoCancelUrl || null,
+    mode: normalizePaymentMode(publicYocoMode),
   };
 }

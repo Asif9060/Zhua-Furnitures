@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { X, Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
 import { useCartStore } from '@/store';
 import { formatPrice } from '@/lib/data';
 import styles from './CartDrawer.module.css';
@@ -81,7 +82,10 @@ export default function CartDrawer() {
                     </div>
                     <button
                       className={styles.removeBtn}
-                      onClick={() => removeItem(item.product.id, item.selectedColor)}
+                      onClick={() => {
+                        removeItem(item.product.id, item.selectedColor);
+                        toast.info(`${item.product.name} removed from cart.`);
+                      }}
                       aria-label="Remove item"
                     >
                       <Trash2 size={14} />
@@ -128,7 +132,7 @@ export default function CartDrawer() {
             </div>
 
             <div className={styles.paymentRow}>
-              {['PayFast', 'Yoco', 'Payflex'].map((p) => (
+              {['Yoco', 'PayFast', 'Payflex'].map((p) => (
                 <span key={p} className={styles.payBadge}>{p}</span>
               ))}
             </div>

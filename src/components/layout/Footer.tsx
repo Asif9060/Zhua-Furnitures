@@ -1,11 +1,48 @@
 'use client';
 
+import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { toast } from 'sonner';
 import { MessageCircle, Heart, Star, Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
 import styles from './Footer.module.css';
 
 export default function Footer() {
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const submitNewsletter = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!email.trim()) {
+      toast.error('Enter your email to subscribe.');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const res = await fetch('/api/newsletters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, source: 'footer' }),
+      });
+
+      const data = (await res.json()) as { error?: string; message?: string };
+      if (!res.ok) {
+        throw new Error(data.error ?? 'Could not subscribe right now.');
+      }
+
+      setEmail('');
+      toast.success(data.message ?? 'Subscribed successfully.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not subscribe right now.';
+      toast.error(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <footer className={styles.footer}>
       {/* Newsletter Band */}
@@ -16,15 +53,18 @@ export default function Footer() {
               <p className="label-accent">Stay Inspired</p>
               <h3 className={styles.newsletterTitle}>Design Ideas, Exclusive Offers & New Arrivals</h3>
             </div>
-            <form className={styles.newsletterForm} onSubmit={(e) => e.preventDefault()}>
+            <form className={styles.newsletterForm} onSubmit={submitNewsletter}>
               <input
                 type="email"
                 placeholder="Your email address"
                 className={styles.newsletterInput}
                 aria-label="Email address for newsletter"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
               />
-              <button type="submit" className="btn btn-primary">
-                Subscribe <ArrowRight size={16} />
+              <button type="submit" className="btn btn-primary" disabled={submitting}>
+                {submitting ? 'Subscribing...' : 'Subscribe'} <ArrowRight size={16} />
               </button>
             </form>
           </div>
@@ -114,7 +154,7 @@ export default function Footer() {
               &copy; {new Date().getFullYear()} Zhua Enterprises. All rights reserved.
             </p>
             <div className={styles.paymentBadges}>
-              {['PayFast', 'Yoco', 'Payflex', 'Visa', 'Mastercard'].map((p) => (
+              {['Yoco', 'PayFast', 'Payflex', 'Visa', 'Mastercard'].map((p) => (
                 <span key={p} className={styles.payBadge}>{p}</span>
               ))}
             </div>

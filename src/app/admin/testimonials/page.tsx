@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { useToastFeedback } from '@/lib/toast-feedback';
 import styles from '../admin-pages.module.css';
 
 interface CloudinaryImageAsset {
@@ -46,6 +48,8 @@ export default function AdminTestimonialsPage() {
     project: '',
   });
 
+  useToastFeedback({ error });
+
   const loadTestimonials = async () => {
     setLoading(true);
     setError('');
@@ -90,6 +94,7 @@ export default function AdminTestimonialsPage() {
       setTestimonials((prev) =>
         prev.map((item) => (item.id === id ? data.testimonial! : item))
       );
+      toast.success('Testimonial updated successfully.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not update testimonial.';
       setError(message);
@@ -115,6 +120,7 @@ export default function AdminTestimonialsPage() {
 
       setTestimonials((prev) => [data.testimonial!, ...prev]);
       setNewItem({ name: '', location: '', text: '', project: '' });
+      toast.success('Testimonial created successfully.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not create testimonial.';
       setError(message);
@@ -133,6 +139,7 @@ export default function AdminTestimonialsPage() {
       }
 
       setTestimonials((prev) => prev.filter((item) => item.id !== id));
+      toast.success('Testimonial deleted successfully.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not delete testimonial.';
       setError(message);

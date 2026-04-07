@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getAdminEmailAllowlist, hasPublicSupabaseEnv } from '@/lib/supabase/env';
+import { appendToastToPath } from '@/lib/toast-query';
 
 export interface AuthenticatedUser {
   id: string;
@@ -60,7 +61,7 @@ export async function requireAuthenticatedPage(loginPath: string): Promise<Authe
   const user = await getOptionalUser();
 
   if (!user) {
-    redirect(loginPath);
+    redirect(appendToastToPath(loginPath, 'info', 'Please sign in to continue.'));
   }
 
   return user;
@@ -75,7 +76,7 @@ export async function requireAdminPage(): Promise<AuthenticatedUser | null> {
   const admin = await isUserAdmin(user.id, user.email);
 
   if (!admin) {
-    redirect('/');
+    redirect(appendToastToPath('/', 'error', 'Admin access is required for that page.'));
   }
 
   return user;

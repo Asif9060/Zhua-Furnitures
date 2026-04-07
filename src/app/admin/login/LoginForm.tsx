@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { useToastFeedback } from '@/lib/toast-feedback';
 import { loginAdmin, type LoginState } from './actions';
 import styles from './page.module.css';
 
@@ -8,6 +9,8 @@ const initialState: LoginState = {};
 
 export default function LoginForm({ redirectTo }: { redirectTo: string }) {
   const [state, action, pending] = useActionState(loginAdmin, initialState);
+
+  useToastFeedback({ error: state.error });
 
   return (
     <form action={action} className={styles.form}>

@@ -1,8 +1,8 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { useCartStore } from '@/store';
 import { formatPrice, deliveryProvinces } from '@/lib/data';
 import { Check, ChevronRight, CreditCard, Truck, FileText } from 'lucide-react';
@@ -13,36 +13,128 @@ const steps = ['Delivery', 'Payment', 'Review'];
 type DeliveryForm = { name: string; email: string; phone: string; address: string; city: string; province: string; postalCode: string; deliveryType: string; };
 
 export default function CheckoutPage() {
-  const router = useRouter();
   const [step, setStep] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState('payfast');
+  const [paymentMethod, setPaymentMethod] = useState('yoco');
   const [deliveryData, setDeliveryData] = useState<DeliveryForm | null>(null);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const { items, total, clearCart } = useCartStore();
+  const [promoCode, setPromoCode] = useState('');
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const { items, total } = useCartStore();
   const { register, handleSubmit, watch } = useForm<DeliveryForm>();
   const selectedProvince = watch('province');
   const deliveryArea = deliveryProvinces.find(p => p.id === selectedProvince);
   const deliveryType = watch('deliveryType') || 'standard';
   const deliveryFee = deliveryArea ? (deliveryType === 'express' ? deliveryArea.expressFee : deliveryArea.standardFee) : 0;
   const cartTotal = total();
-  const grandTotal = cartTotal + deliveryFee;
+  const grandTotal = cartTotal - promoDiscount + deliveryFee;
+  const paymentOptions = [
+    {
+      id: 'payfast',
+      label: 'PayFast',
+      desc: 'Secure payment via PayFast',
+      sub: 'Coming soon',
+      enabled: false,
+    },
+    {
+      id: 'yoco',
+      label: 'Yoco',
+      desc: 'Pay with Yoco card gateway',
+      sub: 'Instant card processing',
+      enabled: true,
+    },
+    {
+      id: 'payflex',
+      label: 'Payflex (BNPL)',
+      desc: 'Buy now, pay in 4 instalments',
+      sub: 'Coming soon',
+      enabled: false,
+    },
+  ] as const;
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('promo');
+    if (code) {
+      setPromoCode(code.trim().toUpperCase());
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!promoCode || cartTotal <= 0) {
+      setPromoDiscount(0);
+      return;
+    }
+
+    let ignore = false;
+
+    const validatePromo = async () => {
+      setPromoLoading(true);
+
+      try {
+        const res = await fetch('/api/promos/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: promoCode, subtotal: cartTotal }),
+        });
+
+        const data = (await res.json()) as {
+          valid?: boolean;
+          promo?: { discountCents: number };
+        };
+
+        if (ignore) {
+          return;
+        }
+
+        if (!res.ok || !data.valid || !data.promo) {
+          setPromoDiscount(0);
+          return;
+        }
+
+        setPromoDiscount(data.promo.discountCents / 100);
+      } finally {
+        if (!ignore) {
+          setPromoLoading(false);
+        }
+      }
+    };
+
+    void validatePromo();
+
+    return () => {
+      ignore = true;
+    };
+  }, [promoCode, cartTotal]);
 
   const onDeliverySubmit = (data: DeliveryForm) => {
     setDeliveryData(data);
     setSubmitError('');
     setStep(1);
+    toast.success('Delivery details saved.');
   };
 
   const placeOrder = async () => {
+    if (paymentMethod !== 'yoco') {
+      const message = 'This payment method is not available yet. Please use Yoco for now.';
+      setSubmitError(message);
+      toast.error(message);
+      return;
+    }
+
     if (!deliveryData) {
-      setSubmitError('Please complete delivery details first.');
+      const message = 'Please complete delivery details first.';
+      setSubmitError(message);
+      toast.error(message);
       setStep(0);
       return;
     }
 
     if (items.length === 0) {
-      setSubmitError('Your cart is empty.');
+      const message = 'Your cart is empty.';
+      setSubmitError(message);
+      toast.error(message);
       return;
     }
 
@@ -61,6 +153,7 @@ export default function CheckoutPage() {
           paymentMethod,
           deliveryFee,
           total: grandTotal,
+          promoCode: promoDiscount > 0 ? promoCode : undefined,
           items: items.map((item) => ({
             productId: item.product.id,
             productName: item.product.name,
@@ -74,16 +167,58 @@ export default function CheckoutPage() {
         }),
       });
 
-      const data = (await res.json()) as { orderNumber?: string; error?: string };
-      if (!res.ok || !data.orderNumber) {
+      const data = (await res.json()) as { orderId?: string; orderNumber?: string; error?: string };
+      if (!res.ok || !data.orderNumber || !data.orderId) {
         throw new Error(data.error ?? 'Could not place order.');
       }
 
-      clearCart();
-      router.push(`/order-confirmation?order=${encodeURIComponent(data.orderNumber)}`);
+      const paymentInitRes = await fetch('/api/payments/yoco/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: data.orderId }),
+      });
+
+      const paymentInit = (await paymentInitRes.json()) as {
+        redirectUrl?: string;
+        formAction?: string;
+        fields?: Record<string, string>;
+        error?: string;
+      };
+
+      if (!paymentInitRes.ok) {
+        throw new Error(paymentInit.error ?? 'Could not initialize payment checkout.');
+      }
+
+      if (paymentInit.redirectUrl) {
+        toast.info('Redirecting to Yoco...');
+        window.location.assign(paymentInit.redirectUrl);
+        return;
+      }
+
+      if (!paymentInit.formAction || !paymentInit.fields) {
+        throw new Error(paymentInit.error ?? 'Could not initialize payment checkout.');
+      }
+
+      toast.info('Redirecting to payment gateway...');
+
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = paymentInit.formAction;
+
+      for (const [key, value] of Object.entries(paymentInit.fields)) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+      }
+
+      document.body.appendChild(form);
+      form.submit();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not place order.';
       setSubmitError(message);
+      toast.error(message);
     } finally {
       setPlacingOrder(false);
     }
@@ -187,13 +322,25 @@ export default function CheckoutPage() {
               <div className={styles.formSection}>
                 <div className={styles.sectionHeader}><CreditCard size={18} color="#B59241" /><h2 className={styles.sectionTitle}>Payment Method</h2></div>
                 <div className={styles.paymentMethods}>
-                  {[
-                    { id: 'payfast', label: 'PayFast', desc: 'Secure payment via PayFast', sub: 'Visa, Mastercard, EFT' },
-                    { id: 'yoco', label: 'Yoco', desc: 'Pay with Yoco card gateway', sub: 'Instant card processing' },
-                    { id: 'payflex', label: 'Payflex (BNPL)', desc: 'Buy now, pay in 4 instalments', sub: 'Interest-free · No fees' },
-                  ].map(pm => (
-                    <label key={pm.id} className={`${styles.paymentOpt} ${paymentMethod === pm.id ? styles.paymentOptActive : ''}`}>
-                      <input type="radio" name="payment" value={pm.id} checked={paymentMethod === pm.id} onChange={() => setPaymentMethod(pm.id)} className={styles.radioHidden} />
+                  {paymentOptions.map((pm) => (
+                    <label
+                      key={pm.id}
+                      className={`${styles.paymentOpt} ${paymentMethod === pm.id ? styles.paymentOptActive : ''}`}
+                      style={pm.enabled ? undefined : { opacity: 0.6, cursor: 'not-allowed' }}
+                    >
+                      <input
+                        type="radio"
+                        name="payment"
+                        value={pm.id}
+                        checked={paymentMethod === pm.id}
+                        onChange={() => {
+                          if (pm.enabled) {
+                            setPaymentMethod(pm.id);
+                          }
+                        }}
+                        disabled={!pm.enabled}
+                        className={styles.radioHidden}
+                      />
                       <div className={styles.paymentOptLeft}>
                         <div className={styles.paymentLabel}>{pm.label}</div>
                         <div className={styles.paymentDesc}>{pm.desc}</div>
@@ -232,6 +379,11 @@ export default function CheckoutPage() {
                     </div>
                   ))}
                 </div>
+                {promoDiscount > 0 ? (
+                  <div className={styles.reviewTotal}>
+                    <span>Promo ({promoCode})</span><span>-{formatPrice(promoDiscount)}</span>
+                  </div>
+                ) : null}
                 <div className={styles.reviewTotal}>
                   <span>Delivery</span><span>{deliveryFee === 0 ? 'FREE' : formatPrice(deliveryFee)}</span>
                 </div>
@@ -266,8 +418,12 @@ export default function CheckoutPage() {
             ))}
             <div className={styles.summaryDivider} />
             <div className={styles.summaryRow}><span>Subtotal</span><span>{formatPrice(cartTotal)}</span></div>
+            {promoDiscount > 0 ? (
+              <div className={styles.summaryRow}><span>Promo ({promoCode})</span><span>-{formatPrice(promoDiscount)}</span></div>
+            ) : null}
             <div className={styles.summaryRow}><span>Delivery</span><span>{deliveryFee === 0 ? <span style={{ color: '#4ECDC4' }}>FREE</span> : formatPrice(deliveryFee)}</span></div>
             <div className={`${styles.summaryRow} ${styles.summaryGrand}`}><span>Total</span><span>{formatPrice(grandTotal)}</span></div>
+            {promoLoading ? <p style={{ color: '#7b8ea6', marginTop: '0.6rem' }}>Validating promo...</p> : null}
           </div>
         </div>
       </div>

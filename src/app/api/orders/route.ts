@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { hasPublicSupabaseEnv, hasServiceSupabaseEnv } from '@/lib/supabase/env';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { validatePromoCode } from '@/lib/promo';
 import { logUserActivity } from '@/lib/user-activity';
 
 export const dynamic = 'force-dynamic';
@@ -31,8 +32,20 @@ type CheckoutPayload = {
   paymentMethod: string;
   deliveryFee: number;
   total: number;
+  promoCode?: string;
   items: CheckoutItem[];
 };
+
+type GatewayProvider = 'payfast' | 'yoco' | 'payflex' | 'placeholder';
+
+function parseGatewayProvider(value: string): GatewayProvider {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'payfast' || normalized === 'yoco' || normalized === 'payflex') {
+    return normalized;
+  }
+
+  return 'placeholder';
+}
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
@@ -82,6 +95,60 @@ export async function POST(request: Request) {
     userId = user?.id ?? null;
   }
 
+  const normalizedItems = payload.items.map((item) => {
+    const unitPriceCents = Math.max(0, Math.round(item.unitPrice * 100));
+    const quantity = Math.max(1, Math.round(item.quantity));
+
+    return {
+      productId: item.productId && isUuid(item.productId) ? item.productId : null,
+      productName: item.productName,
+      unitPriceCents,
+      quantity,
+      lineTotalCents: unitPriceCents * quantity,
+      selectedColor: item.selectedColor ?? null,
+      selectedSize: item.selectedSize ?? null,
+      selectedFabric: item.selectedFabric ?? null,
+      customNote: item.customNote ?? null,
+    };
+  });
+
+  const subtotalCents = normalizedItems.reduce((sum, item) => sum + item.lineTotalCents, 0);
+  const deliveryFeeCents = Math.max(0, Math.round(payload.deliveryFee * 100));
+
+  const requestedPromoCode = String(payload.promoCode ?? '').trim();
+  let appliedPromo:
+    | {
+        id: string;
+        code: string;
+        discountCents: number;
+      }
+    | null = null;
+
+  if (requestedPromoCode) {
+    const promoValidation = await validatePromoCode({
+      supabase,
+      code: requestedPromoCode,
+      subtotalCents,
+      userId,
+    });
+
+    if (!promoValidation.valid) {
+      return NextResponse.json({ error: promoValidation.error }, { status: 400 });
+    }
+
+    appliedPromo = {
+      id: promoValidation.promo.id,
+      code: promoValidation.promo.code,
+      discountCents: promoValidation.promo.discountCents,
+    };
+  }
+
+  const finalTotalCents = Math.max(
+    0,
+    subtotalCents + deliveryFeeCents - (appliedPromo?.discountCents ?? 0)
+  );
+  const gatewayProvider = parseGatewayProvider(String(payload.paymentMethod ?? 'placeholder'));
+
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .insert({
@@ -95,10 +162,15 @@ export async function POST(request: Request) {
       province: delivery.province,
       postal_code: delivery.postalCode,
       delivery_type: delivery.deliveryType || 'standard',
-      delivery_fee_cents: Math.max(0, Math.round(payload.deliveryFee * 100)),
-      total_cents: Math.max(0, Math.round(payload.total * 100)),
-      payment_method: payload.paymentMethod || 'placeholder',
-      payment_status: 'placeholder',
+      delivery_fee_cents: deliveryFeeCents,
+      total_cents: finalTotalCents,
+      promo_code_id: appliedPromo?.id ?? null,
+      promo_discount_cents: appliedPromo?.discountCents ?? 0,
+      payment_method: gatewayProvider,
+      payment_status: 'awaiting_payment',
+      gateway_provider: gatewayProvider,
+      payment_reference: orderNumber,
+      remaining_balance_cents: finalTotalCents,
       fulfillment_status: 'pending',
     })
     .select('id, order_number')
@@ -108,23 +180,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: orderError?.message ?? 'Could not create order.' }, { status: 500 });
   }
 
-  const orderItems = payload.items.map((item) => {
-    const unitPriceCents = Math.max(0, Math.round(item.unitPrice * 100));
-    const quantity = Math.max(1, Math.round(item.quantity));
-
-    return {
-      order_id: order.id,
-      product_id: item.productId && isUuid(item.productId) ? item.productId : null,
-      product_name: item.productName,
-      unit_price_cents: unitPriceCents,
-      quantity,
-      line_total_cents: unitPriceCents * quantity,
-      selected_color: item.selectedColor ?? null,
-      selected_size: item.selectedSize ?? null,
-      selected_fabric: item.selectedFabric ?? null,
-      custom_note: item.customNote ?? null,
-    };
-  });
+  const orderItems = normalizedItems.map((item) => ({
+    order_id: order.id,
+    product_id: item.productId,
+    product_name: item.productName,
+    unit_price_cents: item.unitPriceCents,
+    quantity: item.quantity,
+    line_total_cents: item.lineTotalCents,
+    selected_color: item.selectedColor,
+    selected_size: item.selectedSize,
+    selected_fabric: item.selectedFabric,
+    custom_note: item.customNote,
+  }));
 
   const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
   if (itemsError) {

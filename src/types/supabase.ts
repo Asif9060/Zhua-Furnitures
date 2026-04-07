@@ -277,7 +277,24 @@ export interface Database {
           delivery_fee_cents: number;
           total_cents: number;
           payment_method: string;
-          payment_status: 'pending' | 'paid' | 'partial' | 'failed' | 'placeholder';
+          payment_status:
+            | 'awaiting_payment'
+            | 'pending'
+            | 'paid'
+            | 'partial'
+            | 'failed'
+            | 'placeholder';
+          gateway_provider: 'payfast' | 'yoco' | 'payflex' | 'manual' | 'placeholder';
+          gateway_transaction_id: string | null;
+          payment_session_id: string | null;
+          payment_reference: string | null;
+          payment_attempt_count: number;
+          last_payment_attempt_at: string | null;
+          payment_received_at: string | null;
+          payment_settled_at: string | null;
+          payment_error_message: string | null;
+          refunded_cents: number;
+          remaining_balance_cents: number;
           fulfillment_status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
           notes: string | null;
           created_at: string;
@@ -298,7 +315,24 @@ export interface Database {
           delivery_fee_cents?: number;
           total_cents: number;
           payment_method?: string;
-          payment_status?: 'pending' | 'paid' | 'partial' | 'failed' | 'placeholder';
+          payment_status?:
+            | 'awaiting_payment'
+            | 'pending'
+            | 'paid'
+            | 'partial'
+            | 'failed'
+            | 'placeholder';
+          gateway_provider?: 'payfast' | 'yoco' | 'payflex' | 'manual' | 'placeholder';
+          gateway_transaction_id?: string | null;
+          payment_session_id?: string | null;
+          payment_reference?: string | null;
+          payment_attempt_count?: number;
+          last_payment_attempt_at?: string | null;
+          payment_received_at?: string | null;
+          payment_settled_at?: string | null;
+          payment_error_message?: string | null;
+          refunded_cents?: number;
+          remaining_balance_cents?: number;
           fulfillment_status?: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
           notes?: string | null;
           created_at?: string;
@@ -319,7 +353,24 @@ export interface Database {
           delivery_fee_cents?: number;
           total_cents?: number;
           payment_method?: string;
-          payment_status?: 'pending' | 'paid' | 'partial' | 'failed' | 'placeholder';
+          payment_status?:
+            | 'awaiting_payment'
+            | 'pending'
+            | 'paid'
+            | 'partial'
+            | 'failed'
+            | 'placeholder';
+          gateway_provider?: 'payfast' | 'yoco' | 'payflex' | 'manual' | 'placeholder';
+          gateway_transaction_id?: string | null;
+          payment_session_id?: string | null;
+          payment_reference?: string | null;
+          payment_attempt_count?: number;
+          last_payment_attempt_at?: string | null;
+          payment_received_at?: string | null;
+          payment_settled_at?: string | null;
+          payment_error_message?: string | null;
+          refunded_cents?: number;
+          remaining_balance_cents?: number;
           fulfillment_status?: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
           notes?: string | null;
           created_at?: string;

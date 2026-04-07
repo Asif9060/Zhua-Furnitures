@@ -2,7 +2,13 @@ export type ProductCategory = 'furniture' | 'curtains' | 'accessories';
 export type ProductStatus = 'active' | 'draft' | 'archived';
 export type ProductBadge = 'new' | 'sale' | 'custom' | 'bestseller';
 export type FulfillmentStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-export type PaymentStatus = 'pending' | 'paid' | 'partial' | 'failed' | 'placeholder';
+export type PaymentStatus =
+  | 'awaiting_payment'
+  | 'pending'
+  | 'paid'
+  | 'partial'
+  | 'failed'
+  | 'placeholder';
 
 const productCategoryMap: Record<ProductCategory, string> = {
   furniture: 'Furniture',
@@ -32,6 +38,7 @@ const fulfillmentStatusMap: Record<FulfillmentStatus, string> = {
 };
 
 const paymentStatusMap: Record<PaymentStatus, string> = {
+  awaiting_payment: 'Awaiting Payment',
   pending: 'Pending',
   paid: 'Paid',
   partial: 'Partial',
@@ -111,8 +118,9 @@ export function displayPaymentStatus(status: PaymentStatus): string {
 }
 
 export function parsePaymentStatus(value: string): PaymentStatus {
-  const normalized = value.trim().toLowerCase();
+  const normalized = value.trim().toLowerCase().replace(/\s+/g, '_');
   if (
+    normalized === 'awaiting_payment' ||
     normalized === 'pending' ||
     normalized === 'paid' ||
     normalized === 'partial' ||

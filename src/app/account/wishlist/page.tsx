@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { formatPrice } from '@/lib/data';
 import { useStorefrontProducts } from '@/lib/use-storefront-products';
 import { useWishlistStore, useCartStore } from '@/store';
@@ -33,8 +34,24 @@ export default function WishlistPage() {
                 <p style={{ color: '#A9B7C9', fontSize: '0.88rem' }}>{product.subcategory}</p>
                 <p style={{ color: '#B59241', fontWeight: 600 }}>{formatPrice(product.price)}</p>
                 <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-                  <button className="btn btn-primary btn-sm" onClick={() => addItem({ product, quantity: 1, selectedColor: product.colors[0].name })}>Add to Cart</button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => void toggle(product.id)}>Remove</button>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => {
+                      addItem({ product, quantity: 1, selectedColor: product.colors[0].name });
+                      toast.success(`${product.name} added to cart.`);
+                    }}
+                  >
+                    Add to Cart
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={async () => {
+                      await toggle(product.id);
+                      toast.success(`${product.name} removed from wishlist.`);
+                    }}
+                  >
+                    Remove
+                  </button>
                 </div>
               </article>
             ))}

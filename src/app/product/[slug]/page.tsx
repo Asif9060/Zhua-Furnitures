@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { products, formatPrice, deliveryProvinces } from '@/lib/data';
 import { useCartStore } from '@/store';
+import { toast } from 'sonner';
 import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight, Truck, Shield, RotateCcw, MessageCircle, Check } from 'lucide-react';
 import Link from 'next/link';
 import { useWishlistStore } from '@/store';
@@ -44,6 +45,7 @@ export default function ProductPage() {
 
   const handleAddToCart = () => {
     addItem({ product, quantity, selectedColor: selectedColor.name, selectedSize: activeSize, selectedFabric: activeFabric });
+    toast.success(`${product.name} added to cart.`);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
@@ -188,7 +190,18 @@ export default function ProductPage() {
               <button className={`btn btn-primary btn-lg ${styles.cartBtn}`} onClick={handleAddToCart}>
                 {added ? <><Check size={18} /> Added!</> : <><ShoppingBag size={18} /> Add to Cart</>}
               </button>
-              <button className={`${styles.wishBtn} ${has(product.id) ? styles.wishBtnActive : ''}`} onClick={() => void toggle(product.id)}>
+              <button
+                className={`${styles.wishBtn} ${has(product.id) ? styles.wishBtnActive : ''}`}
+                onClick={async () => {
+                  const alreadyWishlisted = has(product.id);
+                  await toggle(product.id);
+                  toast.success(
+                    alreadyWishlisted
+                      ? `${product.name} removed from wishlist.`
+                      : `${product.name} added to wishlist.`
+                  );
+                }}
+              >
                 <Heart size={20} fill={has(product.id) ? 'currentColor' : 'none'} />
               </button>
             </div>

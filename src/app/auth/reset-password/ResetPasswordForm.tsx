@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { useToastFeedback } from '@/lib/toast-feedback';
 import { requestPasswordReset, type ResetPasswordState } from './actions';
 import styles from '../auth.module.css';
 
@@ -8,6 +9,8 @@ const initialState: ResetPasswordState = {};
 
 export default function ResetPasswordForm() {
   const [state, action, pending] = useActionState(requestPasswordReset, initialState);
+
+  useToastFeedback({ error: state.error, success: state.success });
 
   return (
     <form action={action} className={styles.form}>

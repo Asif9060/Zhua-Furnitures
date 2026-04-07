@@ -14,15 +14,15 @@ export default async function OrderConfirmationPage({
         <div style={{ width: 80, height: 80, background: 'rgba(78,205,196,0.1)', border: '1px solid rgba(78,205,196,0.3)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem' }}>
           <CheckCircle size={40} color="#4ECDC4" />
         </div>
-        <span className="label-accent">Order Confirmed!</span>
-        <h1 className="heading-xl" style={{ color: '#EAF0F8', margin: '1rem 0', fontSize: '2.5rem' }}>Thank You for Your Order</h1>
+        <span className="label-accent">Order Received</span>
+        <h1 className="heading-xl" style={{ color: '#EAF0F8', margin: '1rem 0', fontSize: '2.5rem' }}>We Are Verifying Your Payment</h1>
         <p style={{ color: '#A9B7C9', fontSize: '1rem', lineHeight: 1.7, marginBottom: '2rem' }}>
-          Your order <strong style={{ color: '#B59241' }}>{orderNum}</strong> has been received and is being processed. You&apos;ll receive an email confirmation shortly.
+          Your order <strong style={{ color: '#B59241' }}>{orderNum}</strong> has been created. We&apos;ll confirm payment and continue fulfillment as soon as your gateway response is received.
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '2.5rem' }}>
           {[
-            { icon: Package, label: 'Processing', status: 'Active', color: '#B59241' },
+            { icon: Package, label: 'Payment Verification', status: 'Active', color: '#B59241' },
             { icon: Truck, label: 'Dispatched', status: 'Pending', color: '#3A5673' },
             { icon: CheckCircle, label: 'Delivered', status: 'Pending', color: '#3A5673' },
           ].map(({ icon: Icon, label, status, color }) => (

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import styles from '../auth.module.css';
 
@@ -19,17 +20,23 @@ export default function UpdatePasswordPage() {
     setSuccess('');
 
     if (!newPassword || !confirmPassword) {
-      setError('All fields are required.');
+      const message = 'All fields are required.';
+      setError(message);
+      toast.error(message);
       return;
     }
 
     if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters long.');
+      const message = 'Password must be at least 8 characters long.';
+      setError(message);
+      toast.error(message);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.');
+      const message = 'Passwords do not match.';
+      setError(message);
+      toast.error(message);
       return;
     }
 
@@ -38,11 +45,14 @@ export default function UpdatePasswordPage() {
 
     if (updateError) {
       setError(updateError.message);
+      toast.error(updateError.message);
       setPending(false);
       return;
     }
 
-    setSuccess('Password updated. You can now sign in with your new password.');
+    const message = 'Password updated. You can now sign in with your new password.';
+    setSuccess(message);
+    toast.success(message);
     setPending(false);
   };
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { useToastFeedback } from '@/lib/toast-feedback';
 import { updateProfile, type UpdateProfileState } from './actions';
 
 interface ProfileFormValues {
@@ -21,6 +22,8 @@ const initialState: UpdateProfileState = {};
 
 export default function ProfileForm({ initialValues }: { initialValues: ProfileFormValues }) {
   const [state, action, pending] = useActionState(updateProfile, initialState);
+
+  useToastFeedback({ error: state.error, success: state.success });
 
   return (
     <form action={action} style={{ display: 'grid', gap: '0.8rem' }}>

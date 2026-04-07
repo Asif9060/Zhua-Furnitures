@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useActionState } from 'react';
+import { useToastFeedback } from '@/lib/toast-feedback';
 import { registerUser, type UserRegisterState } from './actions';
 import styles from '../auth.module.css';
 
@@ -9,6 +10,8 @@ const initialState: UserRegisterState = {};
 
 export default function RegisterForm({ redirectTo }: { redirectTo: string }) {
   const [state, action, pending] = useActionState(registerUser, initialState);
+
+  useToastFeedback({ error: state.error });
 
   return (
     <form action={action} className={styles.form}>

@@ -1,12 +1,15 @@
 'use client';
 
 import { useActionState } from 'react';
+import { useToastFeedback } from '@/lib/toast-feedback';
 import { changePassword, type ChangePasswordState } from './actions';
 
 const initialState: ChangePasswordState = {};
 
 export default function PasswordForm() {
   const [state, action, pending] = useActionState(changePassword, initialState);
+
+  useToastFeedback({ error: state.error, success: state.success });
 
   return (
     <form action={action} style={{ display: 'grid', gap: '0.8rem' }}>

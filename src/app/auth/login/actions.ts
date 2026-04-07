@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { hasPublicSupabaseEnv } from '@/lib/supabase/env';
+import { appendToastToPath } from '@/lib/toast-query';
 import { logUserActivity } from '@/lib/user-activity';
 
 export interface UserLoginState {
@@ -62,5 +63,5 @@ export async function loginUser(
     });
   }
 
-  redirect(redirectTo);
+  redirect(appendToastToPath(redirectTo, 'success', 'Signed in successfully.'));
 }

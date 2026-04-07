@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { getSiteUrl } from '@/lib/supabase/site-url';
 import { hasPublicSupabaseEnv, hasServiceSupabaseEnv } from '@/lib/supabase/env';
+import { appendToastToPath } from '@/lib/toast-query';
 import { logUserActivity } from '@/lib/user-activity';
 
 export interface UserRegisterState {
@@ -132,8 +133,15 @@ export async function registerUser(
       });
     }
 
-    redirect(redirectTo);
+    redirect(appendToastToPath(redirectTo, 'success', 'Account created successfully.'));
   }
 
-  redirect(`/auth/login?registered=1&redirectTo=${encodeURIComponent(redirectTo)}`);
+  const loginPath = `/auth/login?registered=1&redirectTo=${encodeURIComponent(redirectTo)}`;
+  redirect(
+    appendToastToPath(
+      loginPath,
+      'info',
+      'Account created. Check your email to verify your account.'
+    )
+  );
 }

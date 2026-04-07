@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { useToastFeedback } from '@/lib/toast-feedback';
 import styles from '../admin-pages.module.css';
 
 interface CloudinaryImageAsset {
@@ -47,6 +49,8 @@ export default function AdminGalleryPage() {
     project: '',
   });
 
+  useToastFeedback({ error });
+
   const loadItems = async () => {
     setLoading(true);
     setError('');
@@ -89,6 +93,7 @@ export default function AdminGalleryPage() {
       }
 
       setItems((prev) => prev.map((item) => (item.id === id ? data.item! : item)));
+      toast.success('Gallery item updated successfully.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not update gallery item.';
       setError(message);
@@ -114,6 +119,7 @@ export default function AdminGalleryPage() {
 
       setItems((prev) => [data.item!, ...prev]);
       setNewItem({ title: '', location: '', project: '' });
+      toast.success('Gallery item created successfully.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not create gallery item.';
       setError(message);
@@ -132,6 +138,7 @@ export default function AdminGalleryPage() {
       }
 
       setItems((prev) => prev.filter((item) => item.id !== id));
+      toast.success('Gallery item deleted successfully.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not delete gallery item.';
       setError(message);

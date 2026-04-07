@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { fabricOptions, headingStyles, formatPrice, products } from '@/lib/data';
 import { useCartStore } from '@/store';
+import { toast } from 'sonner';
 import { MessageCircle, ShoppingBag } from 'lucide-react';
 import styles from './page.module.css';
 
@@ -37,6 +38,7 @@ export default function CurtainCustomizerPage() {
       selectedFabric: selectedFabric.name,
       customNote: `Custom curtains: ${selectedFabric.name}, ${selectedColor.name}, ${selectedHeading.name}, ${selectedLining}, ${selectedLength}, fullness ${fullness}x`,
     });
+    toast.success('Custom curtain configuration added to cart.');
   };
 
   return (

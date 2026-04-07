@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/admin-data';
+import { useToastFeedback } from '@/lib/toast-feedback';
 import styles from '../admin-pages.module.css';
 
 type AdminCategory = 'Furniture' | 'Curtains' | 'Accessories';
@@ -184,7 +186,11 @@ export default function ProductsAdminPage() {
   const [error, setError] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<AdminProductRow | null>(null);
   const [newProduct, setNewProduct] = useState<ProductPatchPayload>(defaultNewProduct);
+
+  useToastFeedback({ error });
 
   const loadProducts = async () => {
     setLoading(true);
@@ -210,6 +216,22 @@ export default function ProductsAdminPage() {
   useEffect(() => {
     void loadProducts();
   }, []);
+
+  useEffect(() => {
+    if (!editingProductId) {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && savingId !== editingProductId) {
+        setEditingProductId(null);
+        setEditDraft(null);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [editingProductId, savingId]);
 
   const filtered = useMemo(() => {
     return products.filter((product) => {
@@ -255,7 +277,11 @@ export default function ProductsAdminPage() {
     };
   };
 
-  const updateProduct = async (id: string, partial: Record<string, unknown>) => {
+  const updateProduct = async (
+    id: string,
+    partial: Record<string, unknown>,
+    successMessage = 'Product updated successfully.'
+  ): Promise<boolean> => {
     setSavingId(id);
     setError('');
 
@@ -276,12 +302,55 @@ export default function ProductsAdminPage() {
           product.id === id ? normalizeProductRow(data.product!) : product
         )
       );
+      if (successMessage) {
+        toast.success(successMessage);
+      }
+      return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not update product.';
       setError(message);
+      return false;
     } finally {
       setSavingId(null);
     }
+  };
+
+  const openEditModal = (product: AdminProductRow) => {
+    setError('');
+    setEditingProductId(product.id);
+    setEditDraft(
+      normalizeProductRow({
+        ...product,
+        images: product.images.map((image) => ({ ...image })),
+      })
+    );
+  };
+
+  const closeEditModal = () => {
+    if (editingProductId && savingId === editingProductId) {
+      return;
+    }
+
+    setEditingProductId(null);
+    setEditDraft(null);
+  };
+
+  const saveEditModal = async () => {
+    if (!editingProductId || !editDraft) {
+      return;
+    }
+
+    const didSave = await updateProduct(
+      editingProductId,
+      buildSavePayload(editDraft),
+      'Product changes saved successfully.'
+    );
+    if (!didSave) {
+      return;
+    }
+
+    setEditingProductId(null);
+    setEditDraft(null);
   };
 
   const uploadProductImage = async (productId: string, file: File) => {
@@ -374,7 +443,7 @@ export default function ProductsAdminPage() {
         },
       ];
 
-      await updateProduct(productId, { images: nextImages });
+      await updateProduct(productId, { images: nextImages }, 'Product image uploaded successfully.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not upload image.';
       setError(message);
@@ -405,7 +474,7 @@ export default function ProductsAdminPage() {
         throw new Error(deleteData.error ?? 'Could not delete image from Cloudinary.');
       }
 
-      await updateProduct(product.id, { images: rest });
+      await updateProduct(product.id, { images: rest }, 'Product image removed successfully.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not remove image.';
       setError(message);
@@ -425,6 +494,7 @@ export default function ProductsAdminPage() {
       }
 
       setProducts((prev) => prev.filter((product) => product.id !== id));
+      toast.success('Product deleted successfully.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not delete product.';
       setError(message);
@@ -477,6 +547,7 @@ export default function ProductsAdminPage() {
 
       setProducts((prev) => [normalizeProductRow(data.product!), ...prev]);
       setNewProduct(defaultNewProduct);
+      toast.success('Product created successfully.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not create product.';
       setError(message);
@@ -724,6 +795,7 @@ export default function ProductsAdminPage() {
                   <td data-label="SKU">
                     <input
                       className={styles.input}
+                      readOnly
                       value={product.sku}
                       onChange={(e) =>
                         setLocalProduct(product.id, (current) => ({
@@ -737,6 +809,7 @@ export default function ProductsAdminPage() {
                     <div style={{ display: 'grid', gap: '0.4rem', minWidth: '220px' }}>
                       <input
                         className={styles.input}
+                        readOnly
                         value={product.name}
                         onChange={(e) =>
                           setLocalProduct(product.id, (current) => ({
@@ -747,6 +820,7 @@ export default function ProductsAdminPage() {
                       />
                       <input
                         className={styles.input}
+                        readOnly
                         value={product.slug}
                         onChange={(e) =>
                           setLocalProduct(product.id, (current) => ({
@@ -761,6 +835,7 @@ export default function ProductsAdminPage() {
                     <div style={{ display: 'grid', gap: '0.4rem', minWidth: '180px' }}>
                       <select
                         className={styles.select}
+                        disabled
                         value={product.category}
                         onChange={(e) =>
                           setLocalProduct(product.id, (current) => ({
@@ -775,6 +850,7 @@ export default function ProductsAdminPage() {
                       </select>
                       <input
                         className={styles.input}
+                        readOnly
                         value={product.subcategory}
                         onChange={(e) =>
                           setLocalProduct(product.id, (current) => ({
@@ -803,6 +879,7 @@ export default function ProductsAdminPage() {
                     <input
                       className={styles.input}
                       style={{ maxWidth: '88px' }}
+                      readOnly
                       inputMode="numeric"
                       value={String(product.stock)}
                       onChange={(e) => {
@@ -824,6 +901,7 @@ export default function ProductsAdminPage() {
                     <div style={{ display: 'grid', gap: '0.4rem', minWidth: '170px' }}>
                       <input
                         className={styles.input}
+                        readOnly
                         inputMode="decimal"
                         placeholder="Weight kg"
                         value={String(product.weightKg)}
@@ -838,6 +916,7 @@ export default function ProductsAdminPage() {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.35rem' }}>
                         <input
                           className={styles.input}
+                          readOnly
                           inputMode="decimal"
                           placeholder="W"
                           value={String(product.widthCm)}
@@ -851,6 +930,7 @@ export default function ProductsAdminPage() {
                         />
                         <input
                           className={styles.input}
+                          readOnly
                           inputMode="decimal"
                           placeholder="D"
                           value={String(product.depthCm)}
@@ -864,6 +944,7 @@ export default function ProductsAdminPage() {
                         />
                         <input
                           className={styles.input}
+                          readOnly
                           inputMode="decimal"
                           placeholder="H"
                           value={String(product.heightCm)}
@@ -882,6 +963,7 @@ export default function ProductsAdminPage() {
                     <div style={{ display: 'grid', gap: '0.45rem', minWidth: '180px' }}>
                       <input
                         className={styles.input}
+                        readOnly
                         inputMode="numeric"
                         value={String(product.price)}
                         onChange={(e) => {
@@ -897,6 +979,7 @@ export default function ProductsAdminPage() {
                       />
                       <input
                         className={styles.input}
+                        readOnly
                         inputMode="decimal"
                         placeholder="Offer %"
                         value={String(product.offerPercentage)}
@@ -921,6 +1004,7 @@ export default function ProductsAdminPage() {
                     <div style={{ display: 'grid', gap: '0.4rem', minWidth: '145px' }}>
                       <select
                         className={styles.select}
+                        disabled
                         value={product.status}
                         onChange={(e) =>
                           setLocalProduct(product.id, (current) => ({
@@ -935,6 +1019,7 @@ export default function ProductsAdminPage() {
                       </select>
                       <select
                         className={styles.select}
+                        disabled
                         value={product.badge ?? ''}
                         onChange={(e) =>
                           setLocalProduct(product.id, (current) => ({
@@ -955,12 +1040,14 @@ export default function ProductsAdminPage() {
                     <div className={styles.inlineActions}>
                       <button
                         className={styles.ghostButton}
-                        disabled={savingId === product.id}
-                        onClick={() =>
-                          updateProduct(product.id, buildSavePayload(product))
+                        disabled={
+                          savingId === product.id ||
+                          uploadingId === product.id ||
+                          (editingProductId !== null && editingProductId !== product.id)
                         }
+                        onClick={() => openEditModal(product)}
                       >
-                        {savingId === product.id ? 'Saving...' : 'Save'}
+                        {editingProductId === product.id ? 'Editing...' : 'Edit'}
                       </button>
                       <label className={styles.ghostButton} style={{ cursor: uploadingId === product.id ? 'wait' : 'pointer' }}>
                         {uploadingId === product.id ? 'Uploading...' : 'Upload'}
@@ -999,6 +1086,324 @@ export default function ProductsAdminPage() {
           </table>
         </div>
       </section>
+
+      {editingProductId && editDraft ? (
+        <div className={styles.modalOverlay} onClick={closeEditModal}>
+          <div
+            className={styles.modalCard}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-product-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className={styles.modalHeader}>
+              <div>
+                <h3 id="edit-product-title" className={styles.modalTitle}>Edit Product</h3>
+                <p className={styles.modalMeta}>ID: {editingProductId}</p>
+              </div>
+              <button className={styles.ghostButton} onClick={closeEditModal} disabled={savingId === editingProductId}>
+                Close
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              <div className={styles.formGrid}>
+                <div className={styles.formRow}>
+                  <label className={styles.label}>SKU</label>
+                  <input
+                    className={styles.input}
+                    value={editDraft.sku}
+                    onChange={(e) =>
+                      setEditDraft((prev) => (prev ? { ...prev, sku: e.target.value } : prev))
+                    }
+                  />
+                </div>
+
+                <div className={styles.formRow}>
+                  <label className={styles.label}>Name</label>
+                  <input
+                    className={styles.input}
+                    value={editDraft.name}
+                    onChange={(e) =>
+                      setEditDraft((prev) => (prev ? { ...prev, name: e.target.value } : prev))
+                    }
+                  />
+                </div>
+
+                <div className={styles.formRow}>
+                  <label className={styles.label}>Slug</label>
+                  <input
+                    className={styles.input}
+                    value={editDraft.slug}
+                    onChange={(e) =>
+                      setEditDraft((prev) => (prev ? { ...prev, slug: e.target.value } : prev))
+                    }
+                  />
+                </div>
+
+                <div className={styles.formRow}>
+                  <label className={styles.label}>Category</label>
+                  <select
+                    className={styles.select}
+                    value={editDraft.category}
+                    onChange={(e) =>
+                      setEditDraft((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              category: e.target.value as AdminCategory,
+                            }
+                          : prev
+                      )
+                    }
+                  >
+                    <option>Furniture</option>
+                    <option>Curtains</option>
+                    <option>Accessories</option>
+                  </select>
+                </div>
+
+                <div className={styles.formRow}>
+                  <label className={styles.label}>Subcategory</label>
+                  <input
+                    className={styles.input}
+                    value={editDraft.subcategory}
+                    onChange={(e) =>
+                      setEditDraft((prev) => (prev ? { ...prev, subcategory: e.target.value } : prev))
+                    }
+                  />
+                </div>
+
+                <div className={styles.formRow}>
+                  <label className={styles.label}>Status</label>
+                  <select
+                    className={styles.select}
+                    value={editDraft.status}
+                    onChange={(e) =>
+                      setEditDraft((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              status: e.target.value as AdminStatus,
+                            }
+                          : prev
+                      )
+                    }
+                  >
+                    <option>Active</option>
+                    <option>Draft</option>
+                    <option>Archived</option>
+                  </select>
+                </div>
+
+                <div className={styles.formRow}>
+                  <label className={styles.label}>Badge</label>
+                  <select
+                    className={styles.select}
+                    value={editDraft.badge ?? ''}
+                    onChange={(e) =>
+                      setEditDraft((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              badge: e.target.value ? (e.target.value as Exclude<AdminBadge, null>) : null,
+                            }
+                          : prev
+                      )
+                    }
+                  >
+                    <option value="">No Badge</option>
+                    <option value="new">new</option>
+                    <option value="sale">sale</option>
+                    <option value="custom">custom</option>
+                    <option value="bestseller">bestseller</option>
+                  </select>
+                </div>
+
+                <div className={styles.formRow}>
+                  <label className={styles.label}>Stock</label>
+                  <input
+                    className={styles.input}
+                    inputMode="numeric"
+                    value={String(editDraft.stock)}
+                    onChange={(e) => {
+                      const nextStock = Number(e.target.value || 0);
+                      setEditDraft((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              stock: Number.isFinite(nextStock) ? nextStock : prev.stock,
+                            }
+                          : prev
+                      );
+                    }}
+                  />
+                </div>
+
+                <div className={styles.formRow}>
+                  <label className={styles.label}>Price (R)</label>
+                  <input
+                    className={styles.input}
+                    inputMode="numeric"
+                    value={String(editDraft.price)}
+                    onChange={(e) => {
+                      const nextPrice = Number(e.target.value || 0);
+                      setEditDraft((prev) =>
+                        prev
+                          ? applyOfferToProduct(
+                              prev,
+                              Number.isFinite(nextPrice) ? nextPrice : prev.price,
+                              prev.offerPercentage
+                            )
+                          : prev
+                      );
+                    }}
+                  />
+                </div>
+
+                <div className={styles.formRow}>
+                  <label className={styles.label}>Offer Percentage (%)</label>
+                  <input
+                    className={styles.input}
+                    inputMode="decimal"
+                    value={String(editDraft.offerPercentage)}
+                    onChange={(e) => {
+                      const nextOffer = Number(e.target.value || 0);
+                      setEditDraft((prev) =>
+                        prev
+                          ? applyOfferToProduct(
+                              prev,
+                              prev.price,
+                              Number.isFinite(nextOffer) ? nextOffer : prev.offerPercentage
+                            )
+                          : prev
+                      );
+                    }}
+                  />
+                </div>
+
+                <div className={styles.formRow}>
+                  <label className={styles.label}>Delivery Days</label>
+                  <input
+                    className={styles.input}
+                    value={editDraft.deliveryDays}
+                    onChange={(e) =>
+                      setEditDraft((prev) => (prev ? { ...prev, deliveryDays: e.target.value } : prev))
+                    }
+                  />
+                </div>
+
+                <div className={styles.formRow}>
+                  <label className={styles.label}>Weight (kg)</label>
+                  <input
+                    className={styles.input}
+                    inputMode="decimal"
+                    value={String(editDraft.weightKg)}
+                    onChange={(e) =>
+                      setEditDraft((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              weightKg: toSafeMeasure(e.target.value),
+                            }
+                          : prev
+                      )
+                    }
+                  />
+                </div>
+
+                <div className={styles.formRow}>
+                  <label className={styles.label}>Width (cm)</label>
+                  <input
+                    className={styles.input}
+                    inputMode="decimal"
+                    value={String(editDraft.widthCm)}
+                    onChange={(e) =>
+                      setEditDraft((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              widthCm: toSafeMeasure(e.target.value),
+                            }
+                          : prev
+                      )
+                    }
+                  />
+                </div>
+
+                <div className={styles.formRow}>
+                  <label className={styles.label}>Depth (cm)</label>
+                  <input
+                    className={styles.input}
+                    inputMode="decimal"
+                    value={String(editDraft.depthCm)}
+                    onChange={(e) =>
+                      setEditDraft((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              depthCm: toSafeMeasure(e.target.value),
+                            }
+                          : prev
+                      )
+                    }
+                  />
+                </div>
+
+                <div className={styles.formRow}>
+                  <label className={styles.label}>Height (cm)</label>
+                  <input
+                    className={styles.input}
+                    inputMode="decimal"
+                    value={String(editDraft.heightCm)}
+                    onChange={(e) =>
+                      setEditDraft((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              heightCm: toSafeMeasure(e.target.value),
+                            }
+                          : prev
+                      )
+                    }
+                  />
+                </div>
+
+                <div className={styles.formRow} style={{ gridColumn: '1 / -1' }}>
+                  <label className={styles.label}>Short Description</label>
+                  <textarea
+                    className={styles.textarea}
+                    value={editDraft.description}
+                    onChange={(e) =>
+                      setEditDraft((prev) => (prev ? { ...prev, description: e.target.value } : prev))
+                    }
+                  />
+                </div>
+
+                <div className={styles.formRow} style={{ gridColumn: '1 / -1' }}>
+                  <label className={styles.label}>Long Description</label>
+                  <textarea
+                    className={styles.textarea}
+                    value={editDraft.longDescription}
+                    onChange={(e) =>
+                      setEditDraft((prev) => (prev ? { ...prev, longDescription: e.target.value } : prev))
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.modalFooter}>
+              <button className={styles.ghostButton} onClick={closeEditModal} disabled={savingId === editingProductId}>
+                Cancel
+              </button>
+              <button className={styles.ghostButton} onClick={saveEditModal} disabled={savingId === editingProductId}>
+                {savingId === editingProductId ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { useToastFeedback } from '@/lib/toast-feedback';
 import styles from '../admin-pages.module.css';
 
 interface CloudinaryImageAsset {
@@ -50,6 +52,8 @@ export default function ContentAdminPage() {
   const [error, setError] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
   const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
+
+  useToastFeedback({ error });
 
   const loadBlocks = async () => {
     setLoading(true);
@@ -117,6 +121,7 @@ export default function ContentAdminPage() {
       }
 
       setBlocks((prev) => prev.map((row) => (row.id === block.id ? data.block! : row)));
+      toast.success('Content block saved successfully.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not save content block.';
       setError(message);

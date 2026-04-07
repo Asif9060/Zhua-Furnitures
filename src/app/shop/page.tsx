@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Heart, ShoppingBag, Star, SlidersHorizontal, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { categories, formatPrice } from '@/lib/data';
 import { useCartStore, useWishlistStore } from '@/store';
 import { useStorefrontProducts } from '@/lib/use-storefront-products';
@@ -158,7 +159,16 @@ export default function ShopPage() {
                     <div className={styles.cardActions}>
                       <button
                         className={`${styles.cardActionBtn} ${has(product.id) ? styles.wishlisted : ''}`}
-                        onClick={e => { e.preventDefault(); void toggle(product.id); }}
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          const alreadyWishlisted = has(product.id);
+                          await toggle(product.id);
+                          toast.success(
+                            alreadyWishlisted
+                              ? `${product.name} removed from wishlist.`
+                              : `${product.name} added to wishlist.`
+                          );
+                        }}
                       ><Heart size={15} fill={has(product.id) ? 'currentColor' : 'none'} /></button>
                     </div>
                     <button
@@ -170,6 +180,7 @@ export default function ShopPage() {
                           quantity: 1,
                           selectedColor: product.colors[0]?.name ?? 'Default',
                         });
+                        toast.success(`${product.name} added to cart.`);
                       }}
                     ><ShoppingBag size={13} /> Add to Cart</button>
                   </div>

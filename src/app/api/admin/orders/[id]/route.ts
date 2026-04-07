@@ -28,7 +28,7 @@ export async function PATCH(
 
   const updateData: {
     fulfillment_status?: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-    payment_status?: 'pending' | 'paid' | 'partial' | 'failed' | 'placeholder';
+    payment_status?: 'awaiting_payment' | 'pending' | 'paid' | 'partial' | 'failed' | 'placeholder';
   } = {};
 
   if (payload.fulfillment) {

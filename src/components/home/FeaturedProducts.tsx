@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { Heart, ShoppingBag, Star, ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
 import { formatPrice, type Product } from '@/lib/data';
 import { useCartStore, useWishlistStore } from '@/store';
 import { useStorefrontProducts } from '@/lib/use-storefront-products';
@@ -20,6 +21,7 @@ export default function FeaturedProducts() {
       selectedColor: product.colors[0].name,
       selectedSize: product.sizes?.[0],
     });
+    toast.success(`${product.name} added to cart.`);
   };
 
   return (
@@ -69,7 +71,16 @@ export default function FeaturedProducts() {
                 <div className={styles.actions}>
                   <button
                     className={`${styles.actionBtn} ${has(product.id) ? styles.actionBtnActive : ''}`}
-                    onClick={(e) => { e.preventDefault(); void toggle(product.id); }}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      const alreadyWishlisted = has(product.id);
+                      await toggle(product.id);
+                      toast.success(
+                        alreadyWishlisted
+                          ? `${product.name} removed from wishlist.`
+                          : `${product.name} added to wishlist.`
+                      );
+                    }}
                     aria-label="Add to wishlist"
                   >
                     <Heart size={16} fill={has(product.id) ? 'currentColor' : 'none'} />

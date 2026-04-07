@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { hasPublicSupabaseEnv } from '@/lib/supabase/env';
 import { isUserAdmin } from '@/lib/auth';
+import { appendToastToPath } from '@/lib/toast-query';
 
 export interface LoginState {
   error?: string;
@@ -54,5 +55,5 @@ export async function loginAdmin(
     };
   }
 
-  redirect(redirectTo);
+  redirect(appendToastToPath(redirectTo, 'success', 'Admin login successful.'));
 }
