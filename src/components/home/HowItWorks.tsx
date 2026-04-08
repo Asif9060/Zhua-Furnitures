@@ -5,7 +5,7 @@ import { Search, Palette, Truck, CheckCircle } from 'lucide-react';
 const steps = [
   { icon: Search, number: '01', title: 'Browse & Discover', desc: 'Explore thousands of premium furniture, curtains, and home accessories curated by our design team.', color: '#B59241' },
   { icon: Palette, number: '02', title: 'Customise', desc: 'Use our Design Studio to visualize pieces in your room, customise fabrics, colors, and sizes.', color: '#4ECDC4' },
-  { icon: CheckCircle, number: '03', title: 'Order & Pay', desc: 'Secure checkout with Yoco, PayFast (coming soon), or Payflex — including Buy Now Pay Later options.', color: '#B39DDB' },
+  { icon: CheckCircle, number: '03', title: 'Order & Pay', desc: 'Secure checkout with PayFast, Yoco (coming soon), or Payflex — including Buy Now Pay Later options.', color: '#B39DDB' },
   { icon: Truck, number: '04', title: 'Delivered & Installed', desc: 'We deliver across all 9 provinces. Book professional installation — we handle everything.', color: '#FF8A65' },
 ];
 

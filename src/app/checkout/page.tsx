@@ -4,7 +4,12 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useCartStore } from '@/store';
-import { formatPrice, deliveryProvinces } from '@/lib/data';
+import { formatPrice } from '@/lib/data';
+import {
+  DEFAULT_DELIVERY_ZONES,
+  DEFAULT_FREE_SHIPPING_THRESHOLD,
+  type DeliveryZone,
+} from '@/lib/delivery';
 import { Check, ChevronRight, CreditCard, Truck, FileText } from 'lucide-react';
 import styles from './page.module.css';
 
@@ -14,8 +19,10 @@ type DeliveryForm = { name: string; email: string; phone: string; address: strin
 
 export default function CheckoutPage() {
   const [step, setStep] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState('yoco');
+  const [paymentMethod, setPaymentMethod] = useState('payfast');
   const [deliveryData, setDeliveryData] = useState<DeliveryForm | null>(null);
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>(DEFAULT_DELIVERY_ZONES);
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(DEFAULT_FREE_SHIPPING_THRESHOLD);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [promoCode, setPromoCode] = useState('');
@@ -24,25 +31,31 @@ export default function CheckoutPage() {
   const { items, total } = useCartStore();
   const { register, handleSubmit, watch } = useForm<DeliveryForm>();
   const selectedProvince = watch('province');
-  const deliveryArea = deliveryProvinces.find(p => p.id === selectedProvince);
+  const deliveryArea = deliveryZones.find((zone) => zone.id === selectedProvince);
   const deliveryType = watch('deliveryType') || 'standard';
-  const deliveryFee = deliveryArea ? (deliveryType === 'express' ? deliveryArea.expressFee : deliveryArea.standardFee) : 0;
   const cartTotal = total();
+  const deliveryFee = deliveryArea
+    ? deliveryType === 'express'
+      ? deliveryArea.expressFee
+      : cartTotal >= freeShippingThreshold
+        ? 0
+        : deliveryArea.standardFee
+    : 0;
   const grandTotal = cartTotal - promoDiscount + deliveryFee;
   const paymentOptions = [
     {
       id: 'payfast',
       label: 'PayFast',
       desc: 'Secure payment via PayFast',
-      sub: 'Coming soon',
-      enabled: false,
+      sub: 'Visa, Mastercard, EFT',
+      enabled: true,
     },
     {
       id: 'yoco',
       label: 'Yoco',
       desc: 'Pay with Yoco card gateway',
-      sub: 'Instant card processing',
-      enabled: true,
+      sub: 'Coming soon',
+      enabled: false,
     },
     {
       id: 'payflex',
@@ -59,6 +72,40 @@ export default function CheckoutPage() {
     if (code) {
       setPromoCode(code.trim().toUpperCase());
     }
+  }, []);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadDeliveryConfig = async () => {
+      try {
+        const res = await fetch('/api/delivery-config');
+        const data = (await res.json()) as {
+          delivery?: { freeShippingThreshold: number; zones: DeliveryZone[] };
+        };
+
+        if (
+          ignore ||
+          !res.ok ||
+          !data.delivery ||
+          !Array.isArray(data.delivery.zones) ||
+          data.delivery.zones.length === 0
+        ) {
+          return;
+        }
+
+        setDeliveryZones(data.delivery.zones);
+        setFreeShippingThreshold(Number(data.delivery.freeShippingThreshold ?? DEFAULT_FREE_SHIPPING_THRESHOLD));
+      } catch {
+        // Keep sensible defaults when the delivery config endpoint is unavailable.
+      }
+    };
+
+    void loadDeliveryConfig();
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -116,8 +163,8 @@ export default function CheckoutPage() {
   };
 
   const placeOrder = async () => {
-    if (paymentMethod !== 'yoco') {
-      const message = 'This payment method is not available yet. Please use Yoco for now.';
+    if (paymentMethod !== 'payfast') {
+      const message = 'This payment method is not available yet. Please use PayFast for now.';
       setSubmitError(message);
       toast.error(message);
       return;
@@ -172,7 +219,7 @@ export default function CheckoutPage() {
         throw new Error(data.error ?? 'Could not place order.');
       }
 
-      const paymentInitRes = await fetch('/api/payments/yoco/initiate', {
+      const paymentInitRes = await fetch('/api/payments/payfast/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId: data.orderId }),
@@ -185,21 +232,11 @@ export default function CheckoutPage() {
         error?: string;
       };
 
-      if (!paymentInitRes.ok) {
-        throw new Error(paymentInit.error ?? 'Could not initialize payment checkout.');
+      if (!paymentInitRes.ok || !paymentInit.formAction || !paymentInit.fields) {
+        throw new Error(paymentInit.error ?? 'Could not initialize PayFast checkout.');
       }
 
-      if (paymentInit.redirectUrl) {
-        toast.info('Redirecting to Yoco...');
-        window.location.assign(paymentInit.redirectUrl);
-        return;
-      }
-
-      if (!paymentInit.formAction || !paymentInit.fields) {
-        throw new Error(paymentInit.error ?? 'Could not initialize payment checkout.');
-      }
-
-      toast.info('Redirecting to payment gateway...');
+      toast.info('Redirecting to PayFast...');
 
       const form = document.createElement('form');
       form.method = 'POST';
@@ -279,7 +316,7 @@ export default function CheckoutPage() {
                     <label className="form-label">Province</label>
                     <select className="form-select" {...register('province', { required: true })}>
                       <option value="">Select Province</option>
-                      {deliveryProvinces.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      {deliveryZones.map((zone) => <option key={zone.id} value={zone.id}>{zone.name}</option>)}
                     </select>
                   </div>
                 </div>

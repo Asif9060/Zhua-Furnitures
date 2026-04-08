@@ -4,6 +4,13 @@ import { hasPublicSupabaseEnv, hasServiceSupabaseEnv } from '@/lib/supabase/env'
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { validatePromoCode } from '@/lib/promo';
 import { logUserActivity } from '@/lib/user-activity';
+import {
+  DEFAULT_DELIVERY_ZONES_DB,
+  DEFAULT_FREE_SHIPPING_THRESHOLD_CENTS,
+  calculateDeliveryFeeCents,
+  normalizeDeliveryType,
+  normalizeProvinceCode,
+} from '@/lib/delivery';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,7 +86,7 @@ export async function POST(request: Request) {
 
   const { data: settingsData } = await supabase
     .from('store_settings')
-    .select('order_prefix')
+    .select('order_prefix, free_shipping_threshold_cents')
     .eq('id', 'default')
     .maybeSingle();
 
@@ -113,7 +120,39 @@ export async function POST(request: Request) {
   });
 
   const subtotalCents = normalizedItems.reduce((sum, item) => sum + item.lineTotalCents, 0);
-  const deliveryFeeCents = Math.max(0, Math.round(payload.deliveryFee * 100));
+  const normalizedProvince = normalizeProvinceCode(delivery.province);
+  const normalizedDeliveryType = normalizeDeliveryType(delivery.deliveryType || 'standard');
+  const freeShippingThresholdCents =
+    settingsData?.free_shipping_threshold_cents ?? DEFAULT_FREE_SHIPPING_THRESHOLD_CENTS;
+
+  const { data: zoneData, error: zoneError } = await supabase
+    .from('delivery_zones')
+    .select('province_code, standard_fee_cents, express_fee_cents, is_active')
+    .eq('is_active', true);
+
+  if (zoneError) {
+    return NextResponse.json({ error: zoneError.message }, { status: 500 });
+  }
+
+  const activeZones = (zoneData ?? []).map((zone) => ({
+    province_code: zone.province_code,
+    standard_fee_cents: zone.standard_fee_cents,
+    express_fee_cents: zone.express_fee_cents,
+  }));
+
+  const zones = activeZones.length > 0 ? activeZones : DEFAULT_DELIVERY_ZONES_DB;
+  const selectedZone = zones.find((zone) => zone.province_code === normalizedProvince);
+
+  if (!selectedZone) {
+    return NextResponse.json({ error: 'Unsupported delivery province.' }, { status: 400 });
+  }
+
+  const deliveryFeeCents = calculateDeliveryFeeCents({
+    subtotalCents,
+    freeShippingThresholdCents,
+    zone: selectedZone,
+    deliveryType: normalizedDeliveryType,
+  });
 
   const requestedPromoCode = String(payload.promoCode ?? '').trim();
   let appliedPromo:
@@ -159,9 +198,9 @@ export async function POST(request: Request) {
       customer_phone: delivery.phone,
       address: delivery.address,
       city: delivery.city,
-      province: delivery.province,
+      province: normalizedProvince,
       postal_code: delivery.postalCode,
-      delivery_type: delivery.deliveryType || 'standard',
+      delivery_type: normalizedDeliveryType,
       delivery_fee_cents: deliveryFeeCents,
       total_cents: finalTotalCents,
       promo_code_id: appliedPromo?.id ?? null,

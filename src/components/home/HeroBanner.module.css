@@ -100,8 +100,6 @@
   padding-bottom: 3rem;
 }
 
-.textBlock {}
-
 .eyebrow {
   display: inline-flex;
   align-items: center;
@@ -122,8 +120,9 @@
   font-family: 'Playfair Display', serif;
   font-size: clamp(3rem, 5.5vw, 5.5rem);
   font-weight: 700;
-  line-height: 1.05;
+  line-height: 1.1;
   color: #EAF0F8;
+  padding-top: 0.06em;
   margin-bottom: 1.5rem;
   letter-spacing: -0.02em;
 }

@@ -154,7 +154,7 @@ export default function Footer() {
               &copy; {new Date().getFullYear()} Zhua Enterprises. All rights reserved.
             </p>
             <div className={styles.paymentBadges}>
-              {['Yoco', 'PayFast', 'Payflex', 'Visa', 'Mastercard'].map((p) => (
+              {['PayFast', 'Yoco', 'Payflex', 'Visa', 'Mastercard'].map((p) => (
                 <span key={p} className={styles.payBadge}>{p}</span>
               ))}
             </div>

@@ -1,15 +1,17 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { X, Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCartStore } from '@/store';
 import { formatPrice } from '@/lib/data';
+import { DEFAULT_FREE_SHIPPING_THRESHOLD } from '@/lib/delivery';
 import styles from './CartDrawer.module.css';
 
 export default function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQuantity, total, itemCount } = useCartStore();
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(DEFAULT_FREE_SHIPPING_THRESHOLD);
   const count = itemCount();
   const cartTotal = total();
 
@@ -17,6 +19,30 @@ export default function CartDrawer() {
     document.body.style.overflow = isOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadDeliveryConfig = async () => {
+      try {
+        const res = await fetch('/api/delivery-config');
+        const data = (await res.json()) as { delivery?: { freeShippingThreshold: number } };
+        if (ignore || !res.ok || !data.delivery) {
+          return;
+        }
+
+        setFreeShippingThreshold(Number(data.delivery.freeShippingThreshold ?? DEFAULT_FREE_SHIPPING_THRESHOLD));
+      } catch {
+        // Keep fallback threshold.
+      }
+    };
+
+    void loadDeliveryConfig();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -105,12 +131,17 @@ export default function CartDrawer() {
               <div className={styles.freeShippingBar}>
                 <div
                   className={styles.freeShippingProgress}
-                  style={{ width: `${Math.min((cartTotal / 5000) * 100, 100)}%` }}
+                  style={{
+                    width: `${Math.min(
+                      freeShippingThreshold > 0 ? (cartTotal / freeShippingThreshold) * 100 : 100,
+                      100
+                    )}%`,
+                  }}
                 />
               </div>
-              {cartTotal >= 5000
+              {cartTotal >= freeShippingThreshold
                 ? <p className={styles.freeShippingText}>🎉 You qualify for <strong>free delivery!</strong></p>
-                : <p className={styles.freeShippingText}>Add {formatPrice(5000 - cartTotal)} more for free delivery</p>
+                : <p className={styles.freeShippingText}>Add {formatPrice(freeShippingThreshold - cartTotal)} more for free delivery</p>
               }
             </div>
 
@@ -132,7 +163,7 @@ export default function CartDrawer() {
             </div>
 
             <div className={styles.paymentRow}>
-              {['Yoco', 'PayFast', 'Payflex'].map((p) => (
+              {['PayFast', 'Yoco', 'Payflex'].map((p) => (
                 <span key={p} className={styles.payBadge}>{p}</span>
               ))}
             </div>

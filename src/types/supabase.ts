@@ -535,6 +535,47 @@ export interface Database {
           updated_at?: string;
         };
       };
+      delivery_zones: {
+        Row: {
+          province_code: string;
+          province_name: string;
+          cities: string[];
+          standard_fee_cents: number;
+          express_fee_cents: number;
+          standard_days: string;
+          express_days: string;
+          is_active: boolean;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          province_code: string;
+          province_name: string;
+          cities?: string[];
+          standard_fee_cents?: number;
+          express_fee_cents?: number;
+          standard_days?: string;
+          express_days?: string;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          province_code?: string;
+          province_name?: string;
+          cities?: string[];
+          standard_fee_cents?: number;
+          express_fee_cents?: number;
+          standard_days?: string;
+          express_days?: string;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       store_settings: {
         Row: {
           id: string;
@@ -543,6 +584,7 @@ export interface Database {
           currency: string;
           order_prefix: string;
           automation: Json;
+          free_shipping_threshold_cents: number;
           updated_at: string;
           created_at: string;
         };
@@ -553,6 +595,7 @@ export interface Database {
           currency?: string;
           order_prefix?: string;
           automation?: Json;
+          free_shipping_threshold_cents?: number;
           updated_at?: string;
           created_at?: string;
         };
@@ -563,6 +606,7 @@ export interface Database {
           currency?: string;
           order_prefix?: string;
           automation?: Json;
+          free_shipping_threshold_cents?: number;
           updated_at?: string;
           created_at?: string;
         };

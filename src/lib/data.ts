@@ -1,3 +1,5 @@
+import { DEFAULT_DELIVERY_ZONES } from './delivery';
+
 // Mock product data for Zhua Enterprises
 
 export interface Product {
@@ -297,17 +299,7 @@ export const testimonials = [
   },
 ];
 
-export const deliveryProvinces = [
-  { id: 'GP', name: 'Gauteng', cities: ['Johannesburg', 'Pretoria', 'Midrand', 'Sandton', 'Centurion'], standardFee: 0, expressFee: 299, standardDays: '3-5', expressDays: '1-2' },
-  { id: 'WC', name: 'Western Cape', cities: ['Cape Town', 'Stellenbosch', 'Paarl', 'George', 'Knysna'], standardFee: 299, expressFee: 599, standardDays: '4-6', expressDays: '2-3' },
-  { id: 'KZN', name: 'KwaZulu-Natal', cities: ['Durban', 'Pietermaritzburg', 'Richards Bay', 'Ballito', 'Umhlanga'], standardFee: 299, expressFee: 599, standardDays: '4-6', expressDays: '2-3' },
-  { id: 'EC', name: 'Eastern Cape', cities: ['Port Elizabeth', 'East London', 'Mthatha', 'Grahamstown'], standardFee: 399, expressFee: 799, standardDays: '5-7', expressDays: '3-4' },
-  { id: 'LP', name: 'Limpopo', cities: ['Polokwane', 'Tzaneen', 'Thohoyandou', 'Louis Trichardt'], standardFee: 399, expressFee: 799, standardDays: '5-7', expressDays: '3-4' },
-  { id: 'MP', name: 'Mpumalanga', cities: ['Nelspruit', 'Witbank', 'Secunda', 'Barberton'], standardFee: 349, expressFee: 699, standardDays: '4-6', expressDays: '2-3' },
-  { id: 'NW', name: 'North West', cities: ['Rustenburg', 'Mahikeng', 'Klerksdorp', 'Brits'], standardFee: 349, expressFee: 699, standardDays: '4-6', expressDays: '2-3' },
-  { id: 'NC', name: 'Northern Cape', cities: ['Kimberley', 'Upington', 'Springbok', 'De Aar'], standardFee: 499, expressFee: 999, standardDays: '6-8', expressDays: '4-5' },
-  { id: 'FS', name: 'Free State', cities: ['Bloemfontein', 'Welkom', 'Bethlehem', 'Sasolburg'], standardFee: 349, expressFee: 699, standardDays: '4-6', expressDays: '2-3' },
-];
+export const deliveryProvinces = DEFAULT_DELIVERY_ZONES;
 
 export const fabricOptions = [
   { id: 'linen', name: 'Linen Blend', texture: '#D4C4A8', price: 180 },

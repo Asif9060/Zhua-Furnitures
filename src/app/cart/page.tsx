@@ -1,10 +1,16 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Trash2, Minus, Plus, ArrowRight, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCartStore } from '@/store';
 import { formatPrice } from '@/lib/data';
+import {
+  DEFAULT_DELIVERY_ZONES,
+  DEFAULT_FREE_SHIPPING_THRESHOLD,
+  estimateDefaultStandardDeliveryFee,
+  type DeliveryZone,
+} from '@/lib/delivery';
 import styles from './page.module.css';
 
 type AppliedPromo = {
@@ -17,10 +23,48 @@ export default function CartPage() {
   const [promo, setPromo] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
   const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(DEFAULT_FREE_SHIPPING_THRESHOLD);
+  const [estimatedDeliveryFee, setEstimatedDeliveryFee] = useState(
+    estimateDefaultStandardDeliveryFee(DEFAULT_DELIVERY_ZONES)
+  );
   const cartTotal = total();
   const discount = appliedPromo ? appliedPromo.discountCents / 100 : 0;
-  const delivery = cartTotal >= 5000 ? 0 : 299;
+  const delivery = cartTotal >= freeShippingThreshold ? 0 : estimatedDeliveryFee;
   const grandTotal = cartTotal - discount + delivery;
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadDeliveryConfig = async () => {
+      try {
+        const res = await fetch('/api/delivery-config');
+        const data = (await res.json()) as {
+          delivery?: { freeShippingThreshold: number; zones: DeliveryZone[] };
+        };
+
+        if (
+          ignore ||
+          !res.ok ||
+          !data.delivery ||
+          !Array.isArray(data.delivery.zones) ||
+          data.delivery.zones.length === 0
+        ) {
+          return;
+        }
+
+        setFreeShippingThreshold(Number(data.delivery.freeShippingThreshold ?? DEFAULT_FREE_SHIPPING_THRESHOLD));
+        setEstimatedDeliveryFee(estimateDefaultStandardDeliveryFee(data.delivery.zones));
+      } catch {
+        // Keep fallback delivery defaults.
+      }
+    };
+
+    void loadDeliveryConfig();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const applyPromo = async () => {
     const normalizedCode = promo.trim().toUpperCase();
@@ -164,7 +208,7 @@ export default function CartPage() {
               >
                 Checkout <ArrowRight size={16} />
               </Link>
-              <p className={styles.summaryNote}>Taxes included · Secure checkout powered by Yoco & PayFast</p>
+              <p className={styles.summaryNote}>Taxes included · Secure checkout powered by PayFast & Yoco</p>
             </div>
           </div>
         )}

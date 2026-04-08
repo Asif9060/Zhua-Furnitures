@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { products, formatPrice, deliveryProvinces } from '@/lib/data';
+import { products, formatPrice } from '@/lib/data';
 import { useCartStore } from '@/store';
 import { toast } from 'sonner';
 import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight, Truck, Shield, RotateCcw, MessageCircle, Check } from 'lucide-react';
@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useWishlistStore } from '@/store';
 import { useParams } from 'next/navigation';
 import { useStorefrontProducts } from '@/lib/use-storefront-products';
+import { DEFAULT_DELIVERY_ZONES, type DeliveryZone } from '@/lib/delivery';
 import styles from './page.module.css';
 
 export default function ProductPage() {
@@ -20,6 +21,7 @@ export default function ProductPage() {
   const [selectedFabric, setSelectedFabric] = useState(product.fabrics?.[0] || '');
   const [quantity, setQuantity] = useState(1);
   const [province, setProvince] = useState('');
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>(DEFAULT_DELIVERY_ZONES);
   const [imgIndex, setImgIndex] = useState(0);
   const [added, setAdded] = useState(false);
   const { addItem } = useCartStore();
@@ -33,6 +35,39 @@ export default function ProductPage() {
     });
   }, [product.id, product.slug]);
 
+  useEffect(() => {
+    let ignore = false;
+
+    const loadDeliveryConfig = async () => {
+      try {
+        const res = await fetch('/api/delivery-config');
+        const data = (await res.json()) as {
+          delivery?: { zones: DeliveryZone[] };
+        };
+
+        if (
+          ignore ||
+          !res.ok ||
+          !data.delivery ||
+          !Array.isArray(data.delivery.zones) ||
+          data.delivery.zones.length === 0
+        ) {
+          return;
+        }
+
+        setDeliveryZones(data.delivery.zones);
+      } catch {
+        // Keep fallback delivery defaults.
+      }
+    };
+
+    void loadDeliveryConfig();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
   const selectedColor =
     product.colors.find((entry) => entry.name === selectedColorName) ??
     product.colors[0] ??
@@ -41,7 +76,7 @@ export default function ProductPage() {
   const activeFabric = product.fabrics?.includes(selectedFabric)
     ? selectedFabric
     : product.fabrics?.[0] || '';
-  const delivery = deliveryProvinces.find(p => p.id === province);
+  const delivery = deliveryZones.find((zone) => zone.id === province);
 
   const handleAddToCart = () => {
     addItem({ product, quantity, selectedColor: selectedColor.name, selectedSize: activeSize, selectedFabric: activeFabric });
@@ -226,7 +261,7 @@ export default function ProductPage() {
               <div className={styles.deliveryHeader}><Truck size={16} /> Delivery Estimate</div>
               <select className="form-select" value={province} onChange={e => setProvince(e.target.value)}>
                 <option value="">Select your province</option>
-                {deliveryProvinces.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                {deliveryZones.map((zone) => <option key={zone.id} value={zone.id}>{zone.name}</option>)}
               </select>
               {delivery && (
                 <div className={styles.deliveryDetails}>
