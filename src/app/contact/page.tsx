@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { Mail, Phone, MapPin, MessageCircle } from 'lucide-react';
 import { useToastFeedback } from '@/lib/toast-feedback';
+import { buildWhatsAppUrl, WHATSAPP_DISPLAY_NUMBER } from '@/lib/whatsapp';
 
 const defaultForm = {
   fullName: '',
@@ -102,7 +103,7 @@ export default function ContactPage() {
 
           <aside style={{ display: 'grid', gap: '0.8rem' }}>
             {[
-              { icon: Phone, title: 'Phone', value: '+27 (0) 00 000 0000' },
+              { icon: Phone, title: 'Phone', value: WHATSAPP_DISPLAY_NUMBER },
               { icon: Mail, title: 'Email', value: 'hello@zhuaenterprises.co.za' },
               { icon: MapPin, title: 'Location', value: 'Johannesburg, South Africa' },
             ].map(({ icon: Icon, title, value }) => (
@@ -114,7 +115,7 @@ export default function ContactPage() {
                 <p style={{ color: '#A9B7C9', fontSize: '0.9rem' }}>{value}</p>
               </div>
             ))}
-            <a href="https://wa.me/27000000000" target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp" style={{ justifyContent: 'center' }}>
+            <a href={buildWhatsAppUrl()} target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp" style={{ justifyContent: 'center' }}>
               <MessageCircle size={16} /> Chat on WhatsApp
             </a>
           </aside>

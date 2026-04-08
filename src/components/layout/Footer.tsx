@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import { MessageCircle, Heart, Star, Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
+import { buildWhatsAppUrl, WHATSAPP_DISPLAY_NUMBER, WHATSAPP_TEL } from '@/lib/whatsapp';
 import styles from './Footer.module.css';
 
 export default function Footer() {
@@ -90,7 +91,15 @@ export default function Footer() {
                 Premium furniture, curtains & blinds, and interior design services — delivered across all 9 South African provinces.
               </p>
               <div className={styles.socials}>
-                <a href="#" className={styles.socialBtn} aria-label="WhatsApp"><MessageCircle size={18} /></a>
+                <a
+                  href={buildWhatsAppUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.socialBtn}
+                  aria-label="WhatsApp"
+                >
+                  <MessageCircle size={18} />
+                </a>
                 <a href="#" className={styles.socialBtn} aria-label="Favourites"><Heart size={18} /></a>
                 <a href="#" className={styles.socialBtn} aria-label="Reviews"><Star size={18} /></a>
               </div>
@@ -131,8 +140,8 @@ export default function Footer() {
                 <li><Link href="/contact" className={styles.footerLink}>Contact Us</Link></li>
               </ul>
               <div className={styles.contactInfo}>
-                <a href="tel:+27000000000" className={styles.contactItem}>
-                  <Phone size={14} /> +27 (0) 00 000 0000
+                <a href={`tel:${WHATSAPP_TEL}`} className={styles.contactItem}>
+                  <Phone size={14} /> {WHATSAPP_DISPLAY_NUMBER}
                 </a>
                 <a href="mailto:hello@zhuaenterprises.co.za" className={styles.contactItem}>
                   <Mail size={14} /> hello@zhuaenterprises.co.za

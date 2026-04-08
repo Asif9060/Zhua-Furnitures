@@ -1,12 +1,11 @@
 'use client';
 
 import { MessageCircle } from 'lucide-react';
+import { buildWhatsAppUrl, DEFAULT_WHATSAPP_MESSAGE } from '@/lib/whatsapp';
 import styles from './WhatsAppFloat.module.css';
 
 export default function WhatsAppFloat() {
-  const phone = '27000000000';
-  const message = encodeURIComponent("Hi! I'm interested in your furniture and curtains. Can you help me?");
-  const href = `https://wa.me/${phone}?text=${message}`;
+  const href = buildWhatsAppUrl(DEFAULT_WHATSAPP_MESSAGE);
 
   return (
     <a

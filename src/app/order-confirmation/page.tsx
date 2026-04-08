@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { CheckCircle, Package, Truck, MessageCircle } from 'lucide-react';
+import { buildWhatsAppUrl } from '@/lib/whatsapp';
 
 export default async function OrderConfirmationPage({
   searchParams,
@@ -38,7 +39,7 @@ export default async function OrderConfirmationPage({
           <Link href="/track-order" className="btn btn-primary">Track Your Order</Link>
           <Link href="/shop" className="btn btn-outline">Continue Shopping</Link>
         </div>
-        <a href="https://wa.me/27000000000" className="btn btn-whatsapp" style={{ display: 'inline-flex' }}>
+        <a href={buildWhatsAppUrl()} target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp" style={{ display: 'inline-flex' }}>
           <MessageCircle size={16} /> Questions? Chat on WhatsApp
         </a>
       </div>

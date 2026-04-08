@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { fabricOptions, formatPrice } from '@/lib/data';
+import { buildWhatsAppUrl } from '@/lib/whatsapp';
 
 const headingMultipliers: Record<string, number> = {
   eyelet: 2,
@@ -29,9 +30,9 @@ export default function CurtainCalculatorPage() {
     return { fullness, fabricMetres, total, rodSize };
   }, [width, drop, panels, heading, selectedFabric.price]);
 
-  const message = encodeURIComponent(
+  const message =
     `Hi! I need a curtain quote. Width: ${width}cm, Drop: ${drop}cm, Panels: ${panels}, Heading: ${heading}, Fabric: ${selectedFabric.name}, Estimated metres: ${estimate.fabricMetres}m, Estimated total: ${formatPrice(estimate.total)}.`
-  );
+  ;
 
   return (
     <div style={{ padding: '140px 0 6rem', minHeight: '100vh', background: 'var(--midnight)' }}>
@@ -82,7 +83,7 @@ export default function CurtainCalculatorPage() {
             </div>
             <div style={{ display: 'grid', gap: '0.6rem' }}>
               <button className="btn btn-primary" style={{ justifyContent: 'center' }}>Add Estimate to Cart</button>
-              <a className="btn btn-whatsapp" href={`https://wa.me/27000000000?text=${message}`} target="_blank" rel="noopener noreferrer" style={{ justifyContent: 'center' }}>
+              <a className="btn btn-whatsapp" href={buildWhatsAppUrl(message)} target="_blank" rel="noopener noreferrer" style={{ justifyContent: 'center' }}>
                 Send via WhatsApp
               </a>
             </div>

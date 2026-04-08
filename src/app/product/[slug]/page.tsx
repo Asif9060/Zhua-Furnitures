@@ -9,6 +9,7 @@ import { useWishlistStore } from '@/store';
 import { useParams } from 'next/navigation';
 import { useStorefrontProducts } from '@/lib/use-storefront-products';
 import { DEFAULT_DELIVERY_ZONES, type DeliveryZone } from '@/lib/delivery';
+import { buildWhatsAppUrl } from '@/lib/whatsapp';
 import styles from './page.module.css';
 
 export default function ProductPage() {
@@ -242,7 +243,7 @@ export default function ProductPage() {
             </div>
 
             <a
-              href={`https://wa.me/27000000000?text=${encodeURIComponent(`Hi! I'm interested in the ${product.name}. Can you help me?`)}`}
+              href={buildWhatsAppUrl(`Hi! I'm interested in the ${product.name}. Can you help me?`)}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-whatsapp"

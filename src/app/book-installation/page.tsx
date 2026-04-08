@@ -2,6 +2,7 @@
 import { FormEvent, useState } from 'react';
 import { products } from '@/lib/data';
 import { useToastFeedback } from '@/lib/toast-feedback';
+import { buildWhatsAppUrl } from '@/lib/whatsapp';
 
 const slots = ['08:00 - 10:00', '10:00 - 12:00', '13:00 - 15:00', '15:00 - 17:00'];
 
@@ -84,7 +85,7 @@ export default function BookInstallationPage() {
           <span className="label-accent">Booking Confirmed</span>
           <h1 className="heading-xl" style={{ color: '#EAF0F8', margin: '1rem 0' }}>Installation Request Received</h1>
           <p style={{ color: '#A9B7C9', lineHeight: 1.8, marginBottom: '1.2rem' }}>Our scheduling team will confirm your installation slot via WhatsApp and email.</p>
-          <a href="https://wa.me/27000000000" target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp">Confirm on WhatsApp</a>
+          <a href={buildWhatsAppUrl()} target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp">Confirm on WhatsApp</a>
         </div>
       </div>
     );

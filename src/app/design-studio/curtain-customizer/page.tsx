@@ -4,6 +4,7 @@ import { fabricOptions, headingStyles, formatPrice, products } from '@/lib/data'
 import { useCartStore } from '@/store';
 import { toast } from 'sonner';
 import { MessageCircle, ShoppingBag } from 'lucide-react';
+import { buildWhatsAppUrl } from '@/lib/whatsapp';
 import styles from './page.module.css';
 
 const colors = [
@@ -136,7 +137,7 @@ export default function CurtainCustomizerPage() {
               <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={handleAddCustomOrder}>
                 <ShoppingBag size={15} /> Add Custom Order
               </button>
-              <a href={`https://wa.me/27000000000?text=${encodeURIComponent(`Hi! I'd like a quote for custom curtains: ${selectedFabric.name} fabric, ${selectedColor.name} colour, ${selectedHeading.name} heading, ${selectedLength}. Estimated R${totalPrice}.`)}`}
+              <a href={buildWhatsAppUrl(`Hi! I'd like a quote for custom curtains: ${selectedFabric.name} fabric, ${selectedColor.name} colour, ${selectedHeading.name} heading, ${selectedLength}. Estimated R${totalPrice}.`)}
                 target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp" style={{ flex: 1, justifyContent: 'center' }}>
                 <MessageCircle size={15} /> WhatsApp Quote
               </a>

@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { ShoppingBag, Search, Heart, Menu, X, ChevronDown, User, LogOut } from 'lucide-react';
 import { useCartStore, useSearchStore } from '@/store';
 import { signOutUser } from '@/app/auth/actions';
+import { buildWhatsAppUrl } from '@/lib/whatsapp';
 import styles from './Navbar.module.css';
 
 interface NavbarAuthUser {
@@ -246,7 +247,7 @@ export default function Navbar() {
                   </form>
                 ) : null}
               </div>
-              <a href="https://wa.me/27000000000" className="btn btn-whatsapp btn-sm">
+              <a href={buildWhatsAppUrl()} className="btn btn-whatsapp btn-sm" target="_blank" rel="noopener noreferrer">
                 WhatsApp Us
               </a>
               <Link href="/contact" className="btn btn-outline btn-sm" onClick={() => setMobileOpen(false)}>Contact</Link>
