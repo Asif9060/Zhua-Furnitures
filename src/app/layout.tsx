@@ -10,6 +10,11 @@ export const metadata: Metadata = {
   },
   description: "South Africa's #1 home solutions platform. Shop premium furniture, custom curtains & blinds, and professional interior design services. Delivered across all 9 provinces.",
   keywords: ['furniture South Africa', 'curtains', 'blinds', 'interior design', 'home decor', 'Johannesburg furniture', 'Cape Town curtains'],
+  icons: {
+    icon: '/logo.jpg?v=2',
+    shortcut: '/logo.jpg?v=2',
+    apple: '/logo.jpg?v=2',
+  },
   openGraph: {
     title: 'Zhua Enterprises — Premium Home Solutions',
     description: "South Africa's #1 home solutions platform",
