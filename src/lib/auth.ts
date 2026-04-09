@@ -72,7 +72,7 @@ export async function requireAdminPage(): Promise<AuthenticatedUser | null> {
     return null;
   }
 
-  const user = await requireAuthenticatedPage('/admin/login');
+  const user = await requireAuthenticatedPage('/auth/login');
   const admin = await isUserAdmin(user.id, user.email);
 
   if (!admin) {

@@ -7,10 +7,10 @@ import { appendToastToPath } from '@/lib/toast-query';
 
 export async function signOutAdmin() {
   if (!hasPublicSupabaseEnv) {
-    redirect(appendToastToPath('/admin/login', 'info', 'Signed out successfully.'));
+    redirect(appendToastToPath('/auth/login', 'info', 'Signed out successfully.'));
   }
 
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
-  redirect(appendToastToPath('/admin/login', 'info', 'Signed out successfully.'));
+  redirect(appendToastToPath('/auth/login', 'info', 'Signed out successfully.'));
 }
