@@ -64,12 +64,12 @@ export async function POST(request: Request) {
     return_url: payfastEnv.returnUrl,
     cancel_url: payfastEnv.cancelUrl,
     notify_url: payfastEnv.notifyUrl,
-    m_payment_id: order.id,
-    amount: (order.total_cents / 100).toFixed(2),
-    item_name: `Order ${order.order_number}`,
     name_first: names.firstName,
     name_last: names.lastName,
     email_address: order.customer_email,
+    m_payment_id: order.id,
+    amount: (order.total_cents / 100).toFixed(2),
+    item_name: `Order ${order.order_number}`,
     custom_str1: order.order_number,
   };
 
