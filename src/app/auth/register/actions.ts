@@ -141,7 +141,7 @@ export async function registerUser(
     appendToastToPath(
       loginPath,
       'info',
-      'Account created. Check your email to verify your account.'
+      'Check your mailbox to confirm your registration.'
     )
   );
 }

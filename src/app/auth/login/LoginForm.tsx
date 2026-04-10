@@ -1,9 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect } from 'react';
 import { useActionState } from 'react';
-import { toast } from 'sonner';
 import { useToastFeedback } from '@/lib/toast-feedback';
 import { loginUser, type UserLoginState } from './actions';
 import styles from '../auth.module.css';
@@ -20,14 +18,6 @@ export default function LoginForm({
   const [state, action, pending] = useActionState(loginUser, initialState);
 
   useToastFeedback({ error: state.error });
-
-  useEffect(() => {
-    if (!registered) {
-      return;
-    }
-
-    toast.info('Account created. Sign in to continue.');
-  }, [registered]);
 
   return (
     <form action={action} className={styles.form}>
