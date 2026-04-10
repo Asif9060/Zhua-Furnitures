@@ -6,7 +6,7 @@ import FdProcessedIdSanitizer from '@/components/layout/FdProcessedIdSanitizer';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Zhua Enterprises — Premium Furniture, Curtains & Interior Design | South Africa',
+    default: 'Zhua Furnitures — Premium Furniture, Curtains & Interior Design | South Africa',
     template: '%s | Zhua Enterprises',
   },
   description: "South Africa's #1 home solutions platform. Shop premium furniture, custom curtains & blinds, and professional interior design services. Delivered across all 9 provinces.",
