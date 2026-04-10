@@ -3,7 +3,7 @@ import { requireAuthenticatedPage } from '@/lib/auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { hasPublicSupabaseEnv, hasServiceSupabaseEnv } from '@/lib/supabase/env';
-import { linkGuestOrdersToUserByEmail } from '@/lib/order-linking';
+import { linkGuestOrdersToUserByEmail, normalizeEmail } from '@/lib/order-linking';
 
 function formatCurrency(cents: number): string {
   const amount = Math.max(0, cents) / 100;
@@ -17,30 +17,84 @@ function toTitle(value: string): string {
     .join(' ');
 }
 
+type OrderDetail = {
+  id: string;
+  order_number: string;
+  created_at: string;
+  total_cents: number;
+  payment_status: string;
+  fulfillment_status: string;
+  customer_email?: string | null;
+  order_items: Array<{
+    product_name: string;
+    quantity: number;
+    line_total_cents: number;
+    selected_color: string | null;
+    selected_size: string | null;
+    selected_fabric: string | null;
+  }>;
+};
+
 export default async function OrderDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const user = await requireAuthenticatedPage('/auth/login');
+  const normalizedUserEmail = normalizeEmail(user.email);
   const { id } = await params;
 
-  if (hasServiceSupabaseEnv && user.email) {
+  let order: OrderDetail | null = null;
+
+  const selectClause =
+    'id, order_number, created_at, total_cents, payment_status, fulfillment_status, customer_email, order_items(product_name, quantity, line_total_cents, selected_color, selected_size, selected_fabric)';
+
+  if (hasServiceSupabaseEnv) {
     const adminClient = createSupabaseAdminClient();
-    await linkGuestOrdersToUserByEmail(adminClient, user.id, user.email);
-  }
 
-  if (!hasPublicSupabaseEnv) {
-    notFound();
-  }
+    if (normalizedUserEmail) {
+      await linkGuestOrdersToUserByEmail(adminClient, user.id, normalizedUserEmail);
+    }
 
-  const supabase = await createSupabaseServerClient();
-  const { data: order } = await supabase
-    .from('orders')
-    .select('id, order_number, created_at, total_cents, payment_status, fulfillment_status, order_items(product_name, quantity, line_total_cents, selected_color, selected_size, selected_fabric)')
-    .eq('id', id)
-    .eq('user_id', user.id)
-    .maybeSingle();
+    const { data: ownedOrder } = await adminClient
+      .from('orders')
+      .select(selectClause)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (ownedOrder) {
+      order = ownedOrder as OrderDetail;
+    } else if (normalizedUserEmail) {
+      const { data: fallbackOrder } = await adminClient
+        .from('orders')
+        .select(selectClause)
+        .eq('id', id)
+        .is('user_id', null)
+        .ilike('customer_email', normalizedUserEmail)
+        .maybeSingle();
+
+      if (
+        fallbackOrder &&
+        normalizeEmail((fallbackOrder as { customer_email?: string | null }).customer_email) ===
+          normalizedUserEmail
+      ) {
+        order = fallbackOrder as OrderDetail;
+      }
+    }
+  } else if (hasPublicSupabaseEnv) {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase
+      .from('orders')
+      .select(
+        'id, order_number, created_at, total_cents, payment_status, fulfillment_status, order_items(product_name, quantity, line_total_cents, selected_color, selected_size, selected_fabric)'
+      )
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    order = data as OrderDetail | null;
+  }
 
   if (!order) {
     notFound();

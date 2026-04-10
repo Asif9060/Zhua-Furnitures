@@ -3,6 +3,8 @@ import { CheckCircle, Package, Truck, MessageCircle } from 'lucide-react';
 import { buildWhatsAppUrl } from '@/lib/whatsapp';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { hasServiceSupabaseEnv } from '@/lib/supabase/env';
+import { getOptionalUser } from '@/lib/auth';
+import { normalizeEmail } from '@/lib/order-linking';
 
 type ConfirmationSearchParams = {
   order?: string;
@@ -19,6 +21,7 @@ type ConfirmedOrder = {
   total_cents: number;
   payment_status: string;
   fulfillment_status: string;
+  customer_email?: string | null;
   order_items: Array<{
     product_id: string | null;
     product_name: string;
@@ -45,15 +48,18 @@ function formatOrderCurrency(totalCents: number): string {
 
 async function getOrderForConfirmation(
   orderIdCandidate: string,
-  orderNumberCandidate: string
+  orderNumberCandidate: string,
+  fallbackUser: { id: string; email: string | null } | null
 ): Promise<ConfirmedOrder | null> {
   if (!hasServiceSupabaseEnv) {
     return null;
   }
 
   const supabase = createSupabaseAdminClient();
+  const fallbackEmail = normalizeEmail(fallbackUser?.email);
+  const lookbackIso = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
   const selectClause =
-    'id, order_number, created_at, total_cents, payment_status, fulfillment_status, order_items(product_id, product_name, quantity, line_total_cents)';
+    'id, order_number, created_at, total_cents, payment_status, fulfillment_status, customer_email, order_items(product_id, product_name, quantity, line_total_cents)';
 
   if (isUuid(orderIdCandidate)) {
     const { data } = await supabase
@@ -79,6 +85,40 @@ async function getOrderForConfirmation(
     }
   }
 
+  if (fallbackUser?.id) {
+    const { data } = await supabase
+      .from('orders')
+      .select(selectClause)
+      .eq('user_id', fallbackUser.id)
+      .gte('created_at', lookbackIso)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (data) {
+      return data as ConfirmedOrder;
+    }
+  }
+
+  if (fallbackEmail) {
+    const { data } = await supabase
+      .from('orders')
+      .select(selectClause)
+      .is('user_id', null)
+      .ilike('customer_email', fallbackEmail)
+      .gte('created_at', lookbackIso)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    const exactMatch = (data ?? []).find(
+      (row) => normalizeEmail((row as { customer_email?: string | null }).customer_email) === fallbackEmail
+    );
+
+    if (exactMatch) {
+      return exactMatch as ConfirmedOrder;
+    }
+  }
+
   return null;
 }
 
@@ -88,11 +128,16 @@ export default async function OrderConfirmationPage({
   searchParams: Promise<ConfirmationSearchParams>;
 }) {
   const params = await searchParams;
+  const user = await getOptionalUser();
   const orderIdCandidate = String(params.orderId ?? params.m_payment_id ?? '').trim();
   const orderNumberCandidate = String(params.order ?? params.custom_str1 ?? '').trim();
-  const confirmedOrder = await getOrderForConfirmation(orderIdCandidate, orderNumberCandidate);
+  const confirmedOrder = await getOrderForConfirmation(orderIdCandidate, orderNumberCandidate, user);
 
-  const orderNum = confirmedOrder?.order_number || orderNumberCandidate || 'ZE-000000';
+  const resolvedOrderRef = confirmedOrder?.order_number || orderNumberCandidate;
+  const orderNum = resolvedOrderRef || 'Pending Confirmation';
+  const trackOrderHref = resolvedOrderRef
+    ? `/track-order?order=${encodeURIComponent(resolvedOrderRef)}`
+    : '/track-order';
   const paymentStatusLabel = confirmedOrder
     ? toTitleLabel(confirmedOrder.payment_status)
     : params.payment_status
@@ -170,7 +215,7 @@ export default async function OrderConfirmationPage({
         </div>
 
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2rem' }}>
-          <Link href={`/track-order?order=${encodeURIComponent(orderNum)}`} className="btn btn-primary">Track Your Order</Link>
+          <Link href={trackOrderHref} className="btn btn-primary">Track Your Order</Link>
           <Link href="/shop" className="btn btn-outline">Continue Shopping</Link>
         </div>
         <a href={buildWhatsAppUrl()} target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp" style={{ display: 'inline-flex' }}>

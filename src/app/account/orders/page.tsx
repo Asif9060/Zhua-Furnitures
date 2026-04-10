@@ -3,7 +3,7 @@ import { requireAuthenticatedPage } from '@/lib/auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { hasPublicSupabaseEnv, hasServiceSupabaseEnv } from '@/lib/supabase/env';
-import { linkGuestOrdersToUserByEmail } from '@/lib/order-linking';
+import { linkGuestOrdersToUserByEmail, normalizeEmail } from '@/lib/order-linking';
 
 interface AccountOrder {
   id: string;
@@ -26,16 +26,76 @@ function formatOrderCurrency(totalCents: number): string {
   return `R ${amount.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+type OrderRow = {
+  id: string;
+  order_number: string;
+  created_at: string;
+  total_cents: number;
+  fulfillment_status: string;
+  payment_status: string;
+  customer_email?: string | null;
+};
+
 export default async function OrdersPage() {
   const user = await requireAuthenticatedPage('/auth/login');
+  const normalizedUserEmail = normalizeEmail(user.email);
   let orders: AccountOrder[] = [];
 
-  if (hasServiceSupabaseEnv && user.email) {
+  if (hasServiceSupabaseEnv) {
     const adminClient = createSupabaseAdminClient();
-    await linkGuestOrdersToUserByEmail(adminClient, user.id, user.email);
-  }
 
-  if (hasPublicSupabaseEnv) {
+    if (normalizedUserEmail) {
+      await linkGuestOrdersToUserByEmail(adminClient, user.id, normalizedUserEmail);
+    }
+
+    const { data: ownedData } = await adminClient
+      .from('orders')
+      .select('id, order_number, created_at, total_cents, fulfillment_status, payment_status')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    const byId = new Map<string, OrderRow>();
+    for (const row of ownedData ?? []) {
+      byId.set(row.id, row as OrderRow);
+    }
+
+    if (normalizedUserEmail) {
+      const { data: fallbackData } = await adminClient
+        .from('orders')
+        .select('id, order_number, created_at, total_cents, fulfillment_status, payment_status, customer_email')
+        .is('user_id', null)
+        .ilike('customer_email', normalizedUserEmail)
+        .order('created_at', { ascending: false })
+        .limit(40);
+
+      const safeMatches = (fallbackData ?? []).filter(
+        (row) => normalizeEmail(row.customer_email) === normalizedUserEmail
+      );
+
+      for (const row of safeMatches) {
+        byId.set(row.id, row as OrderRow);
+      }
+    }
+
+    const mergedRows = Array.from(byId.values()).sort(
+      (left, right) =>
+        new Date(right.created_at).getTime() - new Date(left.created_at).getTime()
+    );
+
+    orders = mergedRows.map((entry) => ({
+      id: entry.id,
+      orderNumber: entry.order_number,
+      date: new Date(entry.created_at).toLocaleDateString('en-ZA', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      }),
+      total: formatOrderCurrency(entry.total_cents),
+      status: toTitleLabel(entry.fulfillment_status),
+      payment: toTitleLabel(entry.payment_status),
+    }));
+  } else if (hasPublicSupabaseEnv) {
+
     const supabase = await createSupabaseServerClient();
     const { data } = await supabase
       .from('orders')
