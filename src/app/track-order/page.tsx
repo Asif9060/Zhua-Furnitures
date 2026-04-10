@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 const statuses = ['Placed', 'Confirmed', 'Dispatched', 'Out for Delivery', 'Delivered'];
@@ -23,6 +23,37 @@ function formatCurrency(cents: number): string {
 }
 
 export default function TrackOrderPage() {
+  return (
+    <Suspense fallback={<TrackOrderFallback />}>
+      <TrackOrderContent />
+    </Suspense>
+  );
+}
+
+function TrackOrderFallback() {
+  return (
+    <div style={{ padding: '140px 0 6rem', minHeight: '100vh', background: 'var(--midnight)' }}>
+      <div className="container" style={{ maxWidth: '860px' }}>
+        <span className="label-accent">Order Tracking</span>
+        <h1 className="heading-xl" style={{ color: '#EAF0F8', margin: '1rem 0 1.25rem' }}>
+          Track Your Delivery
+        </h1>
+        <div
+          style={{
+            background: '#163250',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 14,
+            padding: '1.15rem',
+          }}
+        >
+          <p style={{ color: '#A9B7C9', margin: 0 }}>Loading tracking details...</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TrackOrderContent() {
   const searchParams = useSearchParams();
   const [orderNumber, setOrderNumber] = useState('');
   const [email, setEmail] = useState('');
