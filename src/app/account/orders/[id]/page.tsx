@@ -70,7 +70,6 @@ export default async function OrderDetailPage({
         .from('orders')
         .select(selectClause)
         .eq('id', id)
-        .is('user_id', null)
         .ilike('customer_email', normalizedUserEmail)
         .maybeSingle();
 

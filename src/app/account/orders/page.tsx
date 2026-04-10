@@ -63,7 +63,6 @@ export default async function OrdersPage() {
       const { data: fallbackData } = await adminClient
         .from('orders')
         .select('id, order_number, created_at, total_cents, fulfillment_status, payment_status, customer_email')
-        .is('user_id', null)
         .ilike('customer_email', normalizedUserEmail)
         .order('created_at', { ascending: false })
         .limit(40);

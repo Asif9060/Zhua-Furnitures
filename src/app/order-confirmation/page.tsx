@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { CheckCircle, Package, Truck, MessageCircle } from 'lucide-react';
 import { buildWhatsAppUrl } from '@/lib/whatsapp';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
-import { hasServiceSupabaseEnv } from '@/lib/supabase/env';
+import { getPayFastEnv, hasPayFastEnv, hasServiceSupabaseEnv } from '@/lib/supabase/env';
+import { cookies } from 'next/headers';
 import { getOptionalUser } from '@/lib/auth';
 import { normalizeEmail } from '@/lib/order-linking';
 
@@ -30,6 +31,11 @@ type ConfirmedOrder = {
   }>;
 };
 
+type PendingOrderCookie = {
+  id: string;
+  orderNumber: string;
+};
+
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
@@ -46,10 +52,34 @@ function formatOrderCurrency(totalCents: number): string {
   return `R ${amount.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+function parsePendingOrderCookie(value: string | undefined): PendingOrderCookie | null {
+  if (!value) {
+    return null;
+  }
+
+  const parts = value.split('|');
+  if (parts.length !== 2) {
+    return null;
+  }
+
+  const id = parts[0]?.trim() ?? '';
+  const orderNumber = parts[1]?.trim() ?? '';
+
+  if (!id && !orderNumber) {
+    return null;
+  }
+
+  return {
+    id,
+    orderNumber,
+  };
+}
+
 async function getOrderForConfirmation(
   orderIdCandidate: string,
   orderNumberCandidate: string,
-  fallbackUser: { id: string; email: string | null } | null
+  fallbackUser: { id: string; email: string | null } | null,
+  pendingOrder: PendingOrderCookie | null
 ): Promise<ConfirmedOrder | null> {
   if (!hasServiceSupabaseEnv) {
     return null;
@@ -85,6 +115,30 @@ async function getOrderForConfirmation(
     }
   }
 
+  if (pendingOrder?.id && isUuid(pendingOrder.id)) {
+    const { data } = await supabase
+      .from('orders')
+      .select(selectClause)
+      .eq('id', pendingOrder.id)
+      .maybeSingle();
+
+    if (data) {
+      return data as ConfirmedOrder;
+    }
+  }
+
+  if (pendingOrder?.orderNumber) {
+    const { data } = await supabase
+      .from('orders')
+      .select(selectClause)
+      .eq('order_number', pendingOrder.orderNumber)
+      .maybeSingle();
+
+    if (data) {
+      return data as ConfirmedOrder;
+    }
+  }
+
   if (fallbackUser?.id) {
     const { data } = await supabase
       .from('orders')
@@ -104,7 +158,6 @@ async function getOrderForConfirmation(
     const { data } = await supabase
       .from('orders')
       .select(selectClause)
-      .is('user_id', null)
       .ilike('customer_email', fallbackEmail)
       .gte('created_at', lookbackIso)
       .order('created_at', { ascending: false })
@@ -122,18 +175,117 @@ async function getOrderForConfirmation(
   return null;
 }
 
+async function finalizeSandboxPendingPayment(
+  order: ConfirmedOrder | null,
+  pendingOrder: PendingOrderCookie | null
+): Promise<ConfirmedOrder | null> {
+  if (!order || !pendingOrder || !hasServiceSupabaseEnv || !hasPayFastEnv) {
+    return order;
+  }
+
+  const payfastEnv = getPayFastEnv();
+  if (payfastEnv.mode !== 'sandbox' || order.payment_status === 'paid') {
+    return order;
+  }
+
+  const matchesPendingOrder =
+    (pendingOrder.id && order.id === pendingOrder.id) ||
+    (pendingOrder.orderNumber && order.order_number === pendingOrder.orderNumber);
+
+  if (!matchesPendingOrder) {
+    return order;
+  }
+
+  const nowIso = new Date().toISOString();
+  const supabase = createSupabaseAdminClient();
+  const idempotencyKey = `payfast:sandbox:return:${order.id}`;
+
+  const { data: existingTransaction } = await supabase
+    .from('payment_transactions')
+    .select('id')
+    .eq('idempotency_key', idempotencyKey)
+    .maybeSingle();
+
+  if (!existingTransaction?.id) {
+    const { error: txInsertError } = await supabase.from('payment_transactions').insert({
+      order_id: order.id,
+      gateway: 'payfast',
+      transaction_type: 'sale',
+      status: 'succeeded',
+      amount_cents: order.total_cents,
+      idempotency_key: idempotencyKey,
+      gateway_response: {
+        source: 'sandbox_confirmation_fallback',
+      },
+      attempted_at: nowIso,
+      completed_at: nowIso,
+    });
+
+    if (txInsertError) {
+      console.error('[Order Confirmation] Could not insert sandbox fallback transaction.', {
+        orderId: order.id,
+        error: txInsertError.message,
+      });
+    }
+  }
+
+  const { error: orderUpdateError } = await supabase
+    .from('orders')
+    .update({
+      payment_method: 'payfast',
+      gateway_provider: 'payfast',
+      payment_status: 'paid',
+      payment_received_at: nowIso,
+      payment_settled_at: nowIso,
+      remaining_balance_cents: 0,
+      payment_error_message: null,
+    })
+    .eq('id', order.id);
+
+  if (orderUpdateError) {
+    console.error('[Order Confirmation] Could not finalize sandbox order payment.', {
+      orderId: order.id,
+      error: orderUpdateError.message,
+    });
+    return order;
+  }
+
+  const selectClause =
+    'id, order_number, created_at, total_cents, payment_status, fulfillment_status, customer_email, order_items(product_id, product_name, quantity, line_total_cents)';
+
+  const { data: refreshedOrder } = await supabase
+    .from('orders')
+    .select(selectClause)
+    .eq('id', order.id)
+    .maybeSingle();
+
+  return (refreshedOrder as ConfirmedOrder | null) ?? {
+    ...order,
+    payment_status: 'paid',
+  };
+}
+
 export default async function OrderConfirmationPage({
   searchParams,
 }: {
   searchParams: Promise<ConfirmationSearchParams>;
 }) {
   const params = await searchParams;
+  const cookieStore = await cookies();
+  const pendingOrder = parsePendingOrderCookie(cookieStore.get('ze_pending_order')?.value);
   const user = await getOptionalUser();
   const orderIdCandidate = String(params.orderId ?? params.m_payment_id ?? '').trim();
   const orderNumberCandidate = String(params.order ?? params.custom_str1 ?? '').trim();
-  const confirmedOrder = await getOrderForConfirmation(orderIdCandidate, orderNumberCandidate, user);
+  const resolvedOrder = await getOrderForConfirmation(
+    orderIdCandidate,
+    orderNumberCandidate,
+    user,
+    pendingOrder
+  );
+  const confirmedOrder = await finalizeSandboxPendingPayment(resolvedOrder, pendingOrder);
 
-  const resolvedOrderRef = confirmedOrder?.order_number || orderNumberCandidate;
+  const resolvedOrderRef =
+    confirmedOrder?.order_number || orderNumberCandidate || pendingOrder?.orderNumber;
   const orderNum = resolvedOrderRef || 'Pending Confirmation';
   const trackOrderHref = resolvedOrderRef
     ? `/track-order?order=${encodeURIComponent(resolvedOrderRef)}`

@@ -145,11 +145,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     formAction: processUrl,
     fields: {
       ...fields,
       signature,
     },
   });
+
+  response.cookies.set('ze_pending_order', `${order.id}|${order.order_number}`, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 2 * 60 * 60,
+  });
+
+  return response;
 }
