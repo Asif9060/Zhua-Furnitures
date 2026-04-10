@@ -18,6 +18,7 @@ const steps = ['Delivery', 'Payment', 'Review'];
 type DeliveryForm = { name: string; email: string; phone: string; address: string; city: string; province: string; postalCode: string; deliveryType: string; };
 
 export default function CheckoutPage() {
+  const [isHydrated, setIsHydrated] = useState(false);
   const [step, setStep] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('payfast');
   const [deliveryData, setDeliveryData] = useState<DeliveryForm | null>(null);
@@ -42,6 +43,11 @@ export default function CheckoutPage() {
         : deliveryArea.standardFee
     : 0;
   const grandTotal = cartTotal - promoDiscount + deliveryFee;
+  const hydratedItems = isHydrated ? items : [];
+  const hydratedCartTotal = isHydrated ? cartTotal : 0;
+  const hydratedPromoDiscount = isHydrated ? promoDiscount : 0;
+  const hydratedDeliveryFee = isHydrated ? deliveryFee : 0;
+  const hydratedGrandTotal = isHydrated ? grandTotal : 0;
   const paymentOptions = [
     {
       id: 'payfast',
@@ -65,6 +71,10 @@ export default function CheckoutPage() {
       enabled: false,
     },
   ] as const;
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -390,7 +400,7 @@ export default function CheckoutPage() {
 
                 {paymentMethod === 'payflex' && (
                   <div className={styles.payflex}>
-                    <p className={styles.payflexTitle}>Pay {formatPrice(grandTotal / 4)} today, then 3 x {formatPrice(grandTotal / 4)} over 6 weeks</p>
+                    <p className={styles.payflexTitle}>Pay {formatPrice(hydratedGrandTotal / 4)} today, then 3 x {formatPrice(hydratedGrandTotal / 4)} over 6 weeks</p>
                     <p className={styles.payflexNote}>Interest-free. No hidden fees. Approval is instant.</p>
                   </div>
                 )}
@@ -409,23 +419,23 @@ export default function CheckoutPage() {
               <div className={styles.formSection}>
                 <div className={styles.sectionHeader}><FileText size={18} color="#B59241" /><h2 className={styles.sectionTitle}>Review Your Order</h2></div>
                 <div className={styles.reviewItems}>
-                  {items.map(item => (
+                  {hydratedItems.map(item => (
                     <div key={item.product.id} className={styles.reviewItem}>
                       <span className={styles.reviewName}>{item.product.name} × {item.quantity}</span>
                       <span className={styles.reviewPrice}>{formatPrice(item.product.price * item.quantity)}</span>
                     </div>
                   ))}
                 </div>
-                {promoDiscount > 0 ? (
+                {hydratedPromoDiscount > 0 ? (
                   <div className={styles.reviewTotal}>
-                    <span>Promo ({promoCode})</span><span>-{formatPrice(promoDiscount)}</span>
+                    <span>Promo ({promoCode})</span><span>-{formatPrice(hydratedPromoDiscount)}</span>
                   </div>
                 ) : null}
                 <div className={styles.reviewTotal}>
-                  <span>Delivery</span><span>{deliveryFee === 0 ? 'FREE' : formatPrice(deliveryFee)}</span>
+                  <span>Delivery</span><span>{hydratedDeliveryFee === 0 ? 'FREE' : formatPrice(hydratedDeliveryFee)}</span>
                 </div>
                 <div className={`${styles.reviewTotal} ${styles.reviewGrand}`}>
-                  <span>Total</span><span>{formatPrice(grandTotal)}</span>
+                  <span>Total</span><span>{formatPrice(hydratedGrandTotal)}</span>
                 </div>
                 <div className={styles.stepBtns}>
                   <button className="btn btn-ghost" onClick={() => setStep(1)}>← Back</button>
@@ -447,19 +457,19 @@ export default function CheckoutPage() {
           {/* Order Summary */}
           <div className={styles.summary}>
             <h3 className={styles.summaryTitle}>Order Summary</h3>
-            {items.map(item => (
+            {hydratedItems.map(item => (
               <div key={item.product.id} className={styles.summaryItem}>
                 <span className={styles.summaryItemName}>{item.product.name} × {item.quantity}</span>
                 <span className={styles.summaryItemPrice}>{formatPrice(item.product.price * item.quantity)}</span>
               </div>
             ))}
             <div className={styles.summaryDivider} />
-            <div className={styles.summaryRow}><span>Subtotal</span><span>{formatPrice(cartTotal)}</span></div>
-            {promoDiscount > 0 ? (
-              <div className={styles.summaryRow}><span>Promo ({promoCode})</span><span>-{formatPrice(promoDiscount)}</span></div>
+            <div className={styles.summaryRow}><span>Subtotal</span><span>{formatPrice(hydratedCartTotal)}</span></div>
+            {hydratedPromoDiscount > 0 ? (
+              <div className={styles.summaryRow}><span>Promo ({promoCode})</span><span>-{formatPrice(hydratedPromoDiscount)}</span></div>
             ) : null}
-            <div className={styles.summaryRow}><span>Delivery</span><span>{deliveryFee === 0 ? <span style={{ color: '#4ECDC4' }}>FREE</span> : formatPrice(deliveryFee)}</span></div>
-            <div className={`${styles.summaryRow} ${styles.summaryGrand}`}><span>Total</span><span>{formatPrice(grandTotal)}</span></div>
+            <div className={styles.summaryRow}><span>Delivery</span><span>{hydratedDeliveryFee === 0 ? <span style={{ color: '#4ECDC4' }}>FREE</span> : formatPrice(hydratedDeliveryFee)}</span></div>
+            <div className={`${styles.summaryRow} ${styles.summaryGrand}`}><span>Total</span><span>{formatPrice(hydratedGrandTotal)}</span></div>
             {promoLoading ? <p style={{ color: '#7b8ea6', marginTop: '0.6rem' }}>Validating promo...</p> : null}
           </div>
         </div>

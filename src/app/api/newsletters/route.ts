@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { hasPublicSupabaseEnv, hasServiceSupabaseEnv } from '@/lib/supabase/env';
+import { hasServiceSupabaseEnv } from '@/lib/supabase/env';
+import { getOptionalUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,14 +27,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Please provide a valid email address.' }, { status: 400 });
   }
 
-  let userId: string | null = null;
-  if (hasPublicSupabaseEnv) {
-    const authClient = await createSupabaseServerClient();
-    const {
-      data: { user },
-    } = await authClient.auth.getUser();
-    userId = user?.id ?? null;
-  }
+  const userId = (await getOptionalUser())?.id ?? null;
 
   const supabase = createSupabaseAdminClient();
   const { error } = await supabase.from('newsletter_subscriptions').upsert(

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
-import { hasPublicSupabaseEnv, hasServiceSupabaseEnv } from '@/lib/supabase/env';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { hasServiceSupabaseEnv } from '@/lib/supabase/env';
+import { getOptionalUser } from '@/lib/auth';
 import { validatePromoCode } from '@/lib/promo';
 import { logUserActivity } from '@/lib/user-activity';
 import {
@@ -93,14 +93,7 @@ export async function POST(request: Request) {
   const prefix = settingsData?.order_prefix ?? `ZE-${new Date().getFullYear()}`;
   const orderNumber = `${prefix}-${Date.now().toString().slice(-6)}`;
 
-  let userId: string | null = null;
-  if (hasPublicSupabaseEnv) {
-    const authClient = await createSupabaseServerClient();
-    const {
-      data: { user },
-    } = await authClient.auth.getUser();
-    userId = user?.id ?? null;
-  }
+  const userId = (await getOptionalUser())?.id ?? null;
 
   const normalizedItems = payload.items.map((item) => {
     const unitPriceCents = Math.max(0, Math.round(item.unitPrice * 100));
