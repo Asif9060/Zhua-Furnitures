@@ -28,6 +28,10 @@ export async function findAuthUserIdByEmail(
     });
 
     if (error) {
+      console.error('[Order Linking] Failed to list auth users while resolving email.', {
+        page,
+        error: error.message,
+      });
       return null;
     }
 
@@ -61,7 +65,15 @@ export async function linkGuestOrdersToUserByEmail(
     .is('user_id', null)
     .ilike('customer_email', normalizedEmail);
 
-  if (error || !data || data.length === 0) {
+  if (error) {
+    console.error('[Order Linking] Failed to fetch guest orders for linking.', {
+      userId,
+      error: error.message,
+    });
+    return 0;
+  }
+
+  if (!data || data.length === 0) {
     return 0;
   }
 
@@ -70,6 +82,10 @@ export async function linkGuestOrdersToUserByEmail(
     .map((entry) => entry.id);
 
   if (exactMatchIds.length === 0) {
+    console.info('[Order Linking] Guest orders found but none matched email normalization.', {
+      userId,
+      scannedOrders: data.length,
+    });
     return 0;
   }
 
@@ -80,6 +96,11 @@ export async function linkGuestOrdersToUserByEmail(
     .is('user_id', null);
 
   if (updateError) {
+    console.error('[Order Linking] Failed to update guest orders to authenticated user.', {
+      userId,
+      matchedOrderCount: exactMatchIds.length,
+      error: updateError.message,
+    });
     return 0;
   }
 

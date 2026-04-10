@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { hasServiceSupabaseEnv } from '@/lib/supabase/env';
 import { getOptionalUser } from '@/lib/auth';
+import { findAuthUserIdByEmail } from '@/lib/order-linking';
 import { validatePromoCode } from '@/lib/promo';
 import { logUserActivity } from '@/lib/user-activity';
 import {
@@ -102,7 +103,21 @@ export async function POST(request: Request) {
   const prefix = settingsData?.order_prefix ?? `ZE-${new Date().getFullYear()}`;
   const orderNumber = `${prefix}-${Date.now().toString().slice(-6)}`;
 
-  const userId = (await getOptionalUser())?.id ?? null;
+  const authCookieHint = request.headers.get('cookie') ?? '';
+  const hasSupabaseAuthCookie = /sb-[^=;]+-auth-token/i.test(authCookieHint);
+
+  let userId = (await getOptionalUser())?.id ?? null;
+  if (!userId && hasSupabaseAuthCookie) {
+    const matchedUserId = await findAuthUserIdByEmail(supabase, normalizedDeliveryEmail);
+    if (matchedUserId) {
+      userId = matchedUserId;
+      console.info('[Orders API] Recovered authenticated user for checkout using email match.', {
+        userId,
+      });
+    } else {
+      console.warn('[Orders API] Auth cookie present but no matching user found for checkout email.');
+    }
+  }
 
   const normalizedItems = payload.items.map((item) => {
     const unitPriceCents = Math.max(0, Math.round(item.unitPrice * 100));

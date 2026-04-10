@@ -14,7 +14,7 @@ function encode(value: string): string {
  * Build signature string
  */
 function buildSignatureString(
-  payload: Record<string, any>,
+  payload: Record<string, unknown>,
   passphrase: string,
   sortKeys: boolean = false
 ): string {
@@ -55,7 +55,7 @@ function buildSignatureString(
  * Generate signature
  */
 export function generatePayFastSignature(
-  payload: Record<string, any>,
+  payload: Record<string, unknown>,
   passphrase: string,
   sortKeys: boolean = false
 ): string {
@@ -70,7 +70,7 @@ export function generatePayFastSignature(
  * Verify ITN signature (PayFast callback)
  */
 export function verifyPayFastSignature(
-  payload: Record<string, any>,
+  payload: Record<string, unknown>,
   passphrase: string
 ): boolean {
   const incomingSignature = String(payload.signature || '')

@@ -18,8 +18,13 @@ function toCents(value: string): number {
   return Math.max(0, Math.round(amount * 100));
 }
 
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 export async function POST(request: Request) {
   if (!hasServiceSupabaseEnv || !hasPayFastEnv) {
+    console.error('[PayFast Webhook] Missing required environment configuration.');
     return new NextResponse('Configuration missing', { status: 503 });
   }
 
@@ -32,16 +37,22 @@ export async function POST(request: Request) {
     payload[key] = value;
   }
 
-  if (!verifyPayFastSignature(payload, payfastEnv.passphrase)) {
-    return new NextResponse('Invalid signature', { status: 400 });
-  }
-
   const orderId = String(payload.m_payment_id ?? '').trim();
   const payfastPaymentId = String(payload.pf_payment_id ?? '').trim();
   const providerStatus = mapPayFastPaymentStatus(String(payload.payment_status ?? ''));
 
   if (!orderId) {
+    console.warn('[PayFast Webhook] Missing order reference in payload.');
     return new NextResponse('Missing order reference', { status: 400 });
+  }
+
+  if (!verifyPayFastSignature(payload, payfastEnv.passphrase)) {
+    console.warn('[PayFast Webhook] Invalid signature.', {
+      orderId,
+      payfastPaymentId,
+      providerStatus,
+    });
+    return new NextResponse('Invalid signature', { status: 400 });
   }
 
   const webhookId = `${orderId}:${payfastPaymentId || 'none'}:${providerStatus}`;
@@ -55,6 +66,10 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (existingEvent?.id) {
+    console.info('[PayFast Webhook] Duplicate event received; skipping.', {
+      webhookId,
+      orderId,
+    });
     return new NextResponse('OK', { status: 200 });
   }
 
@@ -64,6 +79,7 @@ export async function POST(request: Request) {
       gateway: 'payfast',
       webhook_id: webhookId,
       event_type: String(payload.payment_status ?? 'unknown'),
+      related_order_id: isUuid(orderId) ? orderId : null,
       processing_status: 'received',
       payload,
     })
@@ -71,6 +87,11 @@ export async function POST(request: Request) {
     .single();
 
   if (createdEventError || !createdEvent) {
+    console.error('[PayFast Webhook] Could not record webhook event.', {
+      webhookId,
+      orderId,
+      error: createdEventError?.message,
+    });
     return new NextResponse(createdEventError?.message ?? 'Could not record webhook event', {
       status: 500,
     });
@@ -85,6 +106,12 @@ export async function POST(request: Request) {
     .single();
 
   if (orderError || !order) {
+    console.warn('[PayFast Webhook] Order not found for webhook event.', {
+      webhookId,
+      orderId,
+      error: orderError?.message,
+    });
+
     await supabase
       .from('payment_webhook_events')
       .update({
@@ -106,23 +133,91 @@ export async function POST(request: Request) {
     const matchedUserId = await findAuthUserIdByEmail(supabase, order.customer_email);
 
     if (matchedUserId) {
-      await linkGuestOrdersToUserByEmail(supabase, matchedUserId, order.customer_email);
+      const linkedCount = await linkGuestOrdersToUserByEmail(
+        supabase,
+        matchedUserId,
+        order.customer_email
+      );
+      console.info('[PayFast Webhook] Linked guest orders to authenticated user.', {
+        orderId: order.id,
+        matchedUserId,
+        linkedCount,
+      });
       resolvedUserId = matchedUserId;
+    } else {
+      console.info('[PayFast Webhook] No auth user found for order email during linking.', {
+        orderId: order.id,
+      });
     }
   }
 
   const amountCents = toCents(String(payload.amount_gross ?? '0'));
   const transactionStatus =
     paymentStatus === 'paid' ? 'succeeded' : paymentStatus === 'failed' ? 'failed' : 'pending';
-  const idempotencyKey = `payfast:${webhookId}`;
+  const idempotencyKey = payfastPaymentId
+    ? `payfast:tx:${payfastPaymentId}`
+    : `payfast:webhook:${webhookId}`;
 
-  const { data: existingTransaction } = await supabase
+  const { data: existingTransactionByKey } = await supabase
     .from('payment_transactions')
-    .select('id')
+    .select('id, attempted_at')
     .eq('idempotency_key', idempotencyKey)
     .maybeSingle();
 
-  if (!existingTransaction?.id) {
+  let existingTransaction = existingTransactionByKey;
+
+  if (!existingTransaction?.id && payfastPaymentId) {
+    const { data: existingTransactionByGateway } = await supabase
+      .from('payment_transactions')
+      .select('id, attempted_at')
+      .eq('gateway', 'payfast')
+      .eq('gateway_transaction_id', payfastPaymentId)
+      .maybeSingle();
+
+    existingTransaction = existingTransactionByGateway;
+  }
+
+  if (existingTransaction?.id) {
+    const { error: transactionUpdateError } = await supabase
+      .from('payment_transactions')
+      .update({
+        status: transactionStatus,
+        amount_cents: amountCents,
+        gateway_response: payload,
+        error_message: paymentStatus === 'failed' ? 'PayFast marked payment as failed.' : null,
+        attempted_at: existingTransaction.attempted_at ?? nowIso,
+        completed_at: paymentStatus === 'pending' ? null : nowIso,
+      })
+      .eq('id', existingTransaction.id);
+
+    if (transactionUpdateError) {
+      console.error('[PayFast Webhook] Could not update transaction record.', {
+        webhookId,
+        orderId: order.id,
+        transactionId: existingTransaction.id,
+        error: transactionUpdateError.message,
+      });
+
+      await supabase
+        .from('payment_webhook_events')
+        .update({
+          processing_status: 'failed',
+          processed_at: nowIso,
+          error_message: transactionUpdateError.message,
+          related_order_id: order.id,
+        })
+        .eq('id', createdEvent.id);
+
+      return new NextResponse(transactionUpdateError.message, { status: 500 });
+    }
+
+    console.info('[PayFast Webhook] Reconciled existing payment transaction.', {
+      webhookId,
+      orderId: order.id,
+      transactionId: existingTransaction.id,
+      transactionStatus,
+    });
+  } else {
     const { error: transactionError } = await supabase.from('payment_transactions').insert({
       order_id: order.id,
       gateway: 'payfast',
@@ -138,6 +233,12 @@ export async function POST(request: Request) {
     });
 
     if (transactionError) {
+      console.error('[PayFast Webhook] Could not insert transaction record.', {
+        webhookId,
+        orderId: order.id,
+        error: transactionError.message,
+      });
+
       await supabase
         .from('payment_webhook_events')
         .update({
@@ -150,12 +251,21 @@ export async function POST(request: Request) {
 
       return new NextResponse(transactionError.message, { status: 500 });
     }
+
+    console.info('[PayFast Webhook] Recorded new payment transaction.', {
+      webhookId,
+      orderId: order.id,
+      transactionStatus,
+    });
   }
 
   const { error: orderUpdateError } = await supabase
     .from('orders')
     .update({
       user_id: resolvedUserId,
+      payment_method: 'payfast',
+      gateway_provider: 'payfast',
+      payment_reference: order.order_number,
       payment_status: paymentStatus,
       gateway_transaction_id: payfastPaymentId || null,
       payment_error_message:
@@ -167,6 +277,12 @@ export async function POST(request: Request) {
     .eq('id', order.id);
 
   if (orderUpdateError) {
+    console.error('[PayFast Webhook] Could not update order payment fields.', {
+      webhookId,
+      orderId: order.id,
+      error: orderUpdateError.message,
+    });
+
     await supabase
       .from('payment_webhook_events')
       .update({
@@ -230,6 +346,12 @@ export async function POST(request: Request) {
       error_message: null,
     })
     .eq('id', createdEvent.id);
+
+  console.info('[PayFast Webhook] Processed successfully.', {
+    webhookId,
+    orderId: order.id,
+    paymentStatus,
+  });
 
   return new NextResponse('OK', { status: 200 });
 }

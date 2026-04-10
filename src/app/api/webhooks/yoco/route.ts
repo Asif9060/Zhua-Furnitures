@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { getYocoEnv, hasServiceSupabaseEnv, hasYocoEnv } from '@/lib/supabase/env';
+import { findAuthUserIdByEmail, linkGuestOrdersToUserByEmail } from '@/lib/order-linking';
 import {
   getYocoWebhookSignature,
   mapYocoPaymentStatus,
@@ -85,6 +86,7 @@ function isUuid(value: string): boolean {
 
 export async function POST(request: Request) {
   if (!hasServiceSupabaseEnv || !hasYocoEnv) {
+    console.error('[Yoco Webhook] Missing required environment configuration.');
     return new NextResponse('Configuration missing', { status: 503 });
   }
 
@@ -93,6 +95,7 @@ export async function POST(request: Request) {
   const signature = getYocoWebhookSignature(request.headers);
 
   if (!verifyYocoWebhookSignature(rawBody, signature, yocoEnv.webhookSecret)) {
+    console.warn('[Yoco Webhook] Invalid signature.');
     return new NextResponse('Invalid signature', { status: 400 });
   }
 
@@ -129,6 +132,7 @@ export async function POST(request: Request) {
   ]);
 
   if (!orderReference) {
+    console.warn('[Yoco Webhook] Missing order reference in payload.');
     return new NextResponse('Missing order reference', { status: 400 });
   }
 
@@ -165,6 +169,10 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (existingEvent?.id) {
+    console.info('[Yoco Webhook] Duplicate event received; skipping.', {
+      webhookId,
+      orderReference,
+    });
     return new NextResponse('OK', { status: 200 });
   }
 
@@ -190,6 +198,11 @@ export async function POST(request: Request) {
     .single();
 
   if (createdEventError || !createdEvent) {
+    console.error('[Yoco Webhook] Could not record webhook event.', {
+      webhookId,
+      orderReference,
+      error: createdEventError?.message,
+    });
     return new NextResponse(createdEventError?.message ?? 'Could not record webhook event', {
       status: 500,
     });
@@ -199,14 +212,14 @@ export async function POST(request: Request) {
     ? supabase
         .from('orders')
         .select(
-          'id, order_number, user_id, promo_code_id, promo_discount_cents, delivery_fee_cents, total_cents, payment_status'
+          'id, order_number, user_id, customer_email, promo_code_id, promo_discount_cents, delivery_fee_cents, total_cents, payment_status'
         )
         .eq('id', orderReference)
         .single()
     : supabase
         .from('orders')
         .select(
-          'id, order_number, user_id, promo_code_id, promo_discount_cents, delivery_fee_cents, total_cents, payment_status'
+          'id, order_number, user_id, customer_email, promo_code_id, promo_discount_cents, delivery_fee_cents, total_cents, payment_status'
         )
         .eq('order_number', orderReference)
         .single();
@@ -214,6 +227,12 @@ export async function POST(request: Request) {
   const { data: order, error: orderError } = await orderLookup;
 
   if (orderError || !order) {
+    console.warn('[Yoco Webhook] Order not found for webhook event.', {
+      webhookId,
+      orderReference,
+      error: orderError?.message,
+    });
+
     await supabase
       .from('payment_webhook_events')
       .update({
@@ -229,18 +248,97 @@ export async function POST(request: Request) {
   const nowIso = new Date().toISOString();
   const paymentStatus =
     order.payment_status === 'paid' && providerStatus !== 'failed' ? 'paid' : providerStatus;
+  let resolvedUserId = order.user_id;
+
+  if (paymentStatus === 'paid' && !resolvedUserId) {
+    const matchedUserId = await findAuthUserIdByEmail(supabase, order.customer_email);
+
+    if (matchedUserId) {
+      const linkedCount = await linkGuestOrdersToUserByEmail(
+        supabase,
+        matchedUserId,
+        order.customer_email
+      );
+      console.info('[Yoco Webhook] Linked guest orders to authenticated user.', {
+        orderId: order.id,
+        matchedUserId,
+        linkedCount,
+      });
+      resolvedUserId = matchedUserId;
+    } else {
+      console.info('[Yoco Webhook] No auth user found for order email during linking.', {
+        orderId: order.id,
+      });
+    }
+  }
+
   const amountCents = Math.max(0, toCents(payload)) || order.total_cents;
   const transactionStatus =
     paymentStatus === 'paid' ? 'succeeded' : paymentStatus === 'failed' ? 'failed' : 'pending';
-  const idempotencyKey = `yoco:${webhookId}`;
+  const idempotencyKey = gatewayTransactionId
+    ? `yoco:tx:${gatewayTransactionId}`
+    : `yoco:webhook:${webhookId}`;
 
-  const { data: existingTransaction } = await supabase
+  const { data: existingTransactionByKey } = await supabase
     .from('payment_transactions')
-    .select('id')
+    .select('id, attempted_at')
     .eq('idempotency_key', idempotencyKey)
     .maybeSingle();
 
-  if (!existingTransaction?.id) {
+  let existingTransaction = existingTransactionByKey;
+
+  if (!existingTransaction?.id && gatewayTransactionId) {
+    const { data: existingTransactionByGateway } = await supabase
+      .from('payment_transactions')
+      .select('id, attempted_at')
+      .eq('gateway', 'yoco')
+      .eq('gateway_transaction_id', gatewayTransactionId)
+      .maybeSingle();
+
+    existingTransaction = existingTransactionByGateway;
+  }
+
+  if (existingTransaction?.id) {
+    const { error: transactionUpdateError } = await supabase
+      .from('payment_transactions')
+      .update({
+        status: transactionStatus,
+        amount_cents: amountCents,
+        gateway_response: payload,
+        error_message: paymentStatus === 'failed' ? 'Yoco marked payment as failed.' : null,
+        attempted_at: existingTransaction.attempted_at ?? nowIso,
+        completed_at: paymentStatus === 'pending' ? null : nowIso,
+      })
+      .eq('id', existingTransaction.id);
+
+    if (transactionUpdateError) {
+      console.error('[Yoco Webhook] Could not update transaction record.', {
+        webhookId,
+        orderId: order.id,
+        transactionId: existingTransaction.id,
+        error: transactionUpdateError.message,
+      });
+
+      await supabase
+        .from('payment_webhook_events')
+        .update({
+          processing_status: 'failed',
+          processed_at: nowIso,
+          error_message: transactionUpdateError.message,
+          related_order_id: order.id,
+        })
+        .eq('id', createdEvent.id);
+
+      return new NextResponse(transactionUpdateError.message, { status: 500 });
+    }
+
+    console.info('[Yoco Webhook] Reconciled existing payment transaction.', {
+      webhookId,
+      orderId: order.id,
+      transactionId: existingTransaction.id,
+      transactionStatus,
+    });
+  } else {
     const { error: transactionError } = await supabase.from('payment_transactions').insert({
       order_id: order.id,
       gateway: 'yoco',
@@ -256,6 +354,12 @@ export async function POST(request: Request) {
     });
 
     if (transactionError) {
+      console.error('[Yoco Webhook] Could not insert transaction record.', {
+        webhookId,
+        orderId: order.id,
+        error: transactionError.message,
+      });
+
       await supabase
         .from('payment_webhook_events')
         .update({
@@ -268,6 +372,12 @@ export async function POST(request: Request) {
 
       return new NextResponse(transactionError.message, { status: 500 });
     }
+
+    console.info('[Yoco Webhook] Recorded new payment transaction.', {
+      webhookId,
+      orderId: order.id,
+      transactionStatus,
+    });
   }
 
   const paymentSessionId = firstString(payload, [
@@ -284,6 +394,7 @@ export async function POST(request: Request) {
   const { error: orderUpdateError } = await supabase
     .from('orders')
     .update({
+      user_id: resolvedUserId,
       payment_method: 'yoco',
       gateway_provider: 'yoco',
       payment_status: paymentStatus,
@@ -297,6 +408,12 @@ export async function POST(request: Request) {
     .eq('id', order.id);
 
   if (orderUpdateError) {
+    console.error('[Yoco Webhook] Could not update order payment fields.', {
+      webhookId,
+      orderId: order.id,
+      error: orderUpdateError.message,
+    });
+
     await supabase
       .from('payment_webhook_events')
       .update({
@@ -334,7 +451,7 @@ export async function POST(request: Request) {
         const { error: insertRedemptionError } = await supabase.from('promo_code_redemptions').insert({
           promo_code_id: promoCode.id,
           order_id: order.id,
-          user_id: order.user_id,
+          user_id: resolvedUserId,
           code_snapshot: promoCode.code,
           subtotal_cents: subtotalCents,
           discount_cents: order.promo_discount_cents,
@@ -360,6 +477,12 @@ export async function POST(request: Request) {
       error_message: null,
     })
     .eq('id', createdEvent.id);
+
+  console.info('[Yoco Webhook] Processed successfully.', {
+    webhookId,
+    orderId: order.id,
+    paymentStatus,
+  });
 
   return new NextResponse('OK', { status: 200 });
 }
