@@ -58,6 +58,10 @@ function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
+function normalizeOrderEmail(value: string): string {
+  return value.trim().toLowerCase();
+}
+
 export async function POST(request: Request) {
   if (!hasServiceSupabaseEnv) {
     return NextResponse.json({ error: 'Supabase service role key is missing.' }, { status: 503 });
@@ -80,6 +84,11 @@ export async function POST(request: Request) {
     !delivery.postalCode
   ) {
     return NextResponse.json({ error: 'Delivery details are incomplete.' }, { status: 400 });
+  }
+
+  const normalizedDeliveryEmail = normalizeOrderEmail(delivery.email);
+  if (!normalizedDeliveryEmail.includes('@')) {
+    return NextResponse.json({ error: 'A valid delivery email is required.' }, { status: 400 });
   }
 
   const supabase = createSupabaseAdminClient();
@@ -187,7 +196,7 @@ export async function POST(request: Request) {
       order_number: orderNumber,
       user_id: userId,
       customer_name: delivery.name,
-      customer_email: delivery.email,
+      customer_email: normalizedDeliveryEmail,
       customer_phone: delivery.phone,
       address: delivery.address,
       city: delivery.city,

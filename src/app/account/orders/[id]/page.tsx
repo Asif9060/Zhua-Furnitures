@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation';
 import { requireAuthenticatedPage } from '@/lib/auth';
+import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { hasPublicSupabaseEnv } from '@/lib/supabase/env';
+import { hasPublicSupabaseEnv, hasServiceSupabaseEnv } from '@/lib/supabase/env';
+import { linkGuestOrdersToUserByEmail } from '@/lib/order-linking';
 
 function formatCurrency(cents: number): string {
   const amount = Math.max(0, cents) / 100;
@@ -22,6 +24,11 @@ export default async function OrderDetailPage({
 }) {
   const user = await requireAuthenticatedPage('/auth/login');
   const { id } = await params;
+
+  if (hasServiceSupabaseEnv && user.email) {
+    const adminClient = createSupabaseAdminClient();
+    await linkGuestOrdersToUserByEmail(adminClient, user.id, user.email);
+  }
 
   if (!hasPublicSupabaseEnv) {
     notFound();

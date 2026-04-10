@@ -19,7 +19,7 @@ export async function GET() {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from('orders')
-    .select('id, order_number, customer_name, created_at, total_cents, payment_status, fulfillment_status, order_items(quantity)')
+    .select('id, order_number, customer_name, customer_email, created_at, total_cents, payment_status, fulfillment_status, order_items(quantity)')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -32,6 +32,7 @@ export async function GET() {
       id: order.id,
       orderNumber: order.order_number,
       customer: order.customer_name,
+      customerEmail: order.customer_email,
       date: order.created_at.slice(0, 10),
       total: Math.round(order.total_cents / 100),
       items: itemCount,
@@ -97,7 +98,7 @@ export async function POST(request: Request) {
       payment_status: parsePaymentStatus(String(payload.paymentStatus ?? 'placeholder')),
       fulfillment_status: parseFulfillmentStatus(String(payload.fulfillmentStatus ?? 'pending')),
     })
-    .select('id, order_number, customer_name, created_at, total_cents, payment_status, fulfillment_status')
+    .select('id, order_number, customer_name, customer_email, created_at, total_cents, payment_status, fulfillment_status')
     .single();
 
   if (error || !data) {
@@ -110,6 +111,7 @@ export async function POST(request: Request) {
         id: data.id,
         orderNumber: data.order_number,
         customer: data.customer_name,
+        customerEmail: data.customer_email,
         date: data.created_at.slice(0, 10),
         total: Math.round(data.total_cents / 100),
         payment: displayPaymentStatus(data.payment_status),

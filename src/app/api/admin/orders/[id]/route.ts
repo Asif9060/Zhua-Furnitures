@@ -44,7 +44,7 @@ export async function PATCH(
     .from('orders')
     .update(updateData)
     .eq('id', id)
-    .select('id, order_number, user_id, customer_name, created_at, total_cents, payment_status, fulfillment_status, order_items(quantity)')
+    .select('id, order_number, user_id, customer_name, customer_email, created_at, total_cents, payment_status, fulfillment_status, order_items(quantity)')
     .single();
 
   if (error || !data) {
@@ -71,6 +71,7 @@ export async function PATCH(
       id: data.id,
       orderNumber: data.order_number,
       customer: data.customer_name,
+      customerEmail: data.customer_email,
       date: data.created_at.slice(0, 10),
       total: Math.round(data.total_cents / 100),
       items: itemCount,

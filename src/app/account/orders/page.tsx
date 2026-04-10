@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { requireAuthenticatedPage } from '@/lib/auth';
+import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { hasPublicSupabaseEnv } from '@/lib/supabase/env';
+import { hasPublicSupabaseEnv, hasServiceSupabaseEnv } from '@/lib/supabase/env';
+import { linkGuestOrdersToUserByEmail } from '@/lib/order-linking';
 
 interface AccountOrder {
   id: string;
@@ -27,6 +29,11 @@ function formatOrderCurrency(totalCents: number): string {
 export default async function OrdersPage() {
   const user = await requireAuthenticatedPage('/auth/login');
   let orders: AccountOrder[] = [];
+
+  if (hasServiceSupabaseEnv && user.email) {
+    const adminClient = createSupabaseAdminClient();
+    await linkGuestOrdersToUserByEmail(adminClient, user.id, user.email);
+  }
 
   if (hasPublicSupabaseEnv) {
     const supabase = await createSupabaseServerClient();

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { getPayFastEnv, hasPayFastEnv, hasServiceSupabaseEnv } from '@/lib/supabase/env';
+import { findAuthUserIdByEmail, linkGuestOrdersToUserByEmail } from '@/lib/order-linking';
 import {
   mapPayFastPaymentStatus,
   verifyPayFastSignature,
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .select(
-      'id, order_number, user_id, promo_code_id, promo_discount_cents, delivery_fee_cents, total_cents, payment_status'
+      'id, order_number, user_id, customer_email, promo_code_id, promo_discount_cents, delivery_fee_cents, total_cents, payment_status'
     )
     .eq('id', orderId)
     .single();
@@ -99,6 +100,16 @@ export async function POST(request: Request) {
   const nowIso = new Date().toISOString();
   const paymentStatus =
     order.payment_status === 'paid' && providerStatus !== 'failed' ? 'paid' : providerStatus;
+
+  let resolvedUserId = order.user_id;
+  if (paymentStatus === 'paid' && !resolvedUserId) {
+    const matchedUserId = await findAuthUserIdByEmail(supabase, order.customer_email);
+
+    if (matchedUserId) {
+      await linkGuestOrdersToUserByEmail(supabase, matchedUserId, order.customer_email);
+      resolvedUserId = matchedUserId;
+    }
+  }
 
   const amountCents = toCents(String(payload.amount_gross ?? '0'));
   const transactionStatus =
@@ -144,6 +155,7 @@ export async function POST(request: Request) {
   const { error: orderUpdateError } = await supabase
     .from('orders')
     .update({
+      user_id: resolvedUserId,
       payment_status: paymentStatus,
       gateway_transaction_id: payfastPaymentId || null,
       payment_error_message:
@@ -192,7 +204,7 @@ export async function POST(request: Request) {
         const { error: insertRedemptionError } = await supabase.from('promo_code_redemptions').insert({
           promo_code_id: promoCode.id,
           order_id: order.id,
-          user_id: order.user_id,
+          user_id: resolvedUserId,
           code_snapshot: promoCode.code,
           subtotal_cents: subtotalCents,
           discount_cents: order.promo_discount_cents,

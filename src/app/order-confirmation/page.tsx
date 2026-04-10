@@ -36,7 +36,7 @@ export default async function OrderConfirmationPage({
         </div>
 
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2rem' }}>
-          <Link href="/track-order" className="btn btn-primary">Track Your Order</Link>
+          <Link href={`/track-order?order=${encodeURIComponent(orderNum)}`} className="btn btn-primary">Track Your Order</Link>
           <Link href="/shop" className="btn btn-outline">Continue Shopping</Link>
         </div>
         <a href={buildWhatsAppUrl()} target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp" style={{ display: 'inline-flex' }}>

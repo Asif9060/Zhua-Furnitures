@@ -24,6 +24,7 @@ interface AdminOrderRow {
   id: string;
   orderNumber: string;
   customer: string;
+  customerEmail: string;
   date: string;
   total: number;
   items: number;
@@ -104,6 +105,7 @@ export default function OrdersAdminPage() {
             <tr>
               <th>Order</th>
               <th>Customer</th>
+              <th>Email</th>
               <th>Date</th>
               <th>Items</th>
               <th>Total</th>
@@ -117,6 +119,7 @@ export default function OrdersAdminPage() {
               <tr key={order.id}>
                 <td>{order.orderNumber}</td>
                 <td>{order.customer}</td>
+                <td>{order.customerEmail}</td>
                 <td>{order.date}</td>
                 <td>{order.items}</td>
                 <td>{formatCurrency(order.total)}</td>
