@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { getPayFastEnv, hasPayFastEnv, hasServiceSupabaseEnv } from '@/lib/supabase/env';
 import { generatePayFastSignature, getPayFastProcessUrl } from '@/lib/payments/payfast';
+import { getSiteUrl } from '@/lib/supabase/site-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,33 @@ function getNameParts(fullName: string): { firstName: string; lastName: string }
     firstName: tokens[0],
     lastName: tokens.slice(1).join(' '),
   };
+}
+
+function buildCallbackUrl(
+  configuredUrl: string,
+  fallbackPath: string,
+  siteUrl: string,
+  params: Record<string, string>
+): string {
+  const fallback = new URL(fallbackPath, siteUrl);
+  Object.entries(params).forEach(([key, value]) => {
+    fallback.searchParams.set(key, value);
+  });
+
+  const trimmedConfiguredUrl = configuredUrl.trim();
+  if (!trimmedConfiguredUrl) {
+    return fallback.toString();
+  }
+
+  try {
+    const parsed = new URL(trimmedConfiguredUrl, siteUrl);
+    Object.entries(params).forEach(([key, value]) => {
+      parsed.searchParams.set(key, value);
+    });
+    return parsed.toString();
+  } catch {
+    return fallback.toString();
+  }
 }
 
 export async function POST(request: Request) {
@@ -57,12 +85,35 @@ export async function POST(request: Request) {
   const payfastEnv = getPayFastEnv();
   const processUrl = getPayFastProcessUrl(payfastEnv.mode);
   const names = getNameParts(order.customer_name);
+  const siteUrl = getSiteUrl(request.headers);
+
+  const callbackParams = {
+    order: order.order_number,
+    orderId: order.id,
+  };
+
+  const returnUrl = buildCallbackUrl(
+    payfastEnv.returnUrl,
+    '/order-confirmation',
+    siteUrl,
+    callbackParams
+  );
+
+  const cancelUrl = buildCallbackUrl(
+    payfastEnv.cancelUrl,
+    '/checkout',
+    siteUrl,
+    {
+      payment: 'cancelled',
+      ...callbackParams,
+    }
+  );
 
   const fields: Record<string, string> = {
     merchant_id: payfastEnv.merchantId,
     merchant_key: payfastEnv.merchantKey,
-    return_url: payfastEnv.returnUrl,
-    cancel_url: payfastEnv.cancelUrl,
+    return_url: returnUrl,
+    cancel_url: cancelUrl,
     notify_url: payfastEnv.notifyUrl,
     name_first: names.firstName,
     name_last: names.lastName,
