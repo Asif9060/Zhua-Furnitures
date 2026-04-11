@@ -6,8 +6,8 @@ import FdProcessedIdSanitizer from '@/components/layout/FdProcessedIdSanitizer';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Zhua Furnitures — Premium Furniture, Curtains & Interior Design | South Africa',
-    template: '%s | Zhua Enterprises',
+    default: 'Zhua Furniture — Premium Furniture, Curtains & Interior Design | South Africa',
+    template: '%s | Zhua Furniture',
   },
   description: "South Africa's #1 home solutions platform. Shop premium furniture, custom curtains & blinds, and professional interior design services. Delivered across all 9 provinces.",
   keywords: ['furniture South Africa', 'curtains', 'blinds', 'interior design', 'home decor', 'Johannesburg furniture', 'Cape Town curtains'],
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     apple: '/logo.jpg?v=2',
   },
   openGraph: {
-    title: 'Zhua Enterprises — Premium Home Solutions',
+    title: 'Zhua Furniture — Premium Home Solutions',
     description: "South Africa's #1 home solutions platform",
     type: 'website',
     locale: 'en_ZA',
