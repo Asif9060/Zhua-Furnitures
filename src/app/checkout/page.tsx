@@ -29,7 +29,7 @@ export default function CheckoutPage() {
   const [promoCode, setPromoCode] = useState('');
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoLoading, setPromoLoading] = useState(false);
-  const { items, total } = useCartStore();
+  const { items, total, clearCart, flushRemoteSync } = useCartStore();
   const { register, handleSubmit, watch } = useForm<DeliveryForm>();
   const selectedProvince = watch('province');
   const deliveryArea = deliveryZones.find((zone) => zone.id === selectedProvince);
@@ -245,6 +245,9 @@ export default function CheckoutPage() {
       if (!paymentInitRes.ok || !paymentInit.formAction || !paymentInit.fields) {
         throw new Error(paymentInit.error ?? 'Could not initialize PayFast checkout.');
       }
+
+      clearCart();
+      await flushRemoteSync();
 
       toast.info('Redirecting to PayFast...');
 

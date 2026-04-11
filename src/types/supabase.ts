@@ -84,6 +84,29 @@ export interface Database {
           updated_at?: string;
         };
       };
+      user_carts: {
+        Row: {
+          id: string;
+          user_id: string;
+          items: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          items?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          items?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       user_activity_log: {
         Row: {
           id: string;
