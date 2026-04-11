@@ -8,7 +8,7 @@ import HowItWorks from '@/components/home/HowItWorks';
 import Testimonials from '@/components/home/Testimonials';
 
 export const metadata: Metadata = {
-  title: 'Zhua Enterprises — Premium Furniture, Curtains & Interior Design | South Africa',
+  title: 'Zhua Furniture — Premium Furniture, Curtains & Interior Design | South Africa',
   description: "South Africa's #1 home solutions platform. Shop premium furniture, custom curtains & blinds, and professional interior design services across all 9 provinces.",
 };
 
