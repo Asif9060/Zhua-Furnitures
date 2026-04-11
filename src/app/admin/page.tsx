@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { displayFulfillmentStatus } from '@/lib/admin-api';
+import AdminOverviewAutoRefresh from '@/components/admin/AdminOverviewAutoRefresh';
 import styles from './admin-pages.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -205,6 +206,8 @@ export default async function AdminDashboardPage() {
 
   return (
     <>
+      <AdminOverviewAutoRefresh />
+
       <section className={styles.grid4}>
         {adminMetrics.map((metric) => (
           <article key={metric.label} className={styles.card}>

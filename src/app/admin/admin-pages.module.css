@@ -4,6 +4,28 @@
   gap: 0.9rem;
 }
 
+.liveMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #a9b7c9;
+  font-size: 0.76rem;
+  margin-bottom: 0.8rem;
+}
+
+.liveDot {
+  color: #69d6b1;
+  font-size: 0.8rem;
+}
+
+.liveDivider {
+  color: rgba(169, 183, 201, 0.5);
+}
+
+.livePaused {
+  color: #f6c26d;
+}
+
 .grid2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
