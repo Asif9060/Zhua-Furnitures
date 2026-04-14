@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/admin-data';
 import { useToastFeedback } from '@/lib/toast-feedback';
@@ -28,24 +28,39 @@ interface AdminOrderRow {
   date: string;
   total: number;
   items: number;
+  orderItems: Array<{
+    productName: string;
+    quantity: number;
+    lineTotal: number;
+    selectedColor: string | null;
+    selectedSize: string | null;
+    selectedFabric: string | null;
+  }>;
   payment: 'Awaiting Payment' | 'Pending' | 'Paid' | 'Partial' | 'Failed' | 'Placeholder';
   fulfillment: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
 }
 
 export default function OrdersAdminPage() {
   const [orders, setOrders] = useState<AdminOrderRow[]>([]);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
 
   useToastFeedback({ error });
 
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async (orderNumberQuery: string) => {
     setLoading(true);
     setError('');
 
     try {
-      const res = await fetch('/api/admin/orders', { cache: 'no-store' });
+      const search = orderNumberQuery.trim();
+      const endpoint = search
+        ? `/api/admin/orders?q=${encodeURIComponent(search)}`
+        : '/api/admin/orders';
+
+      const res = await fetch(endpoint, { cache: 'no-store' });
       const data = (await res.json()) as { orders?: AdminOrderRow[]; error?: string };
 
       if (!res.ok) {
@@ -59,11 +74,19 @@ export default function OrdersAdminPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    void loadOrders();
-  }, []);
+    const debounceId = setTimeout(() => {
+      setSearchQuery(searchInput.trim());
+    }, 300);
+
+    return () => clearTimeout(debounceId);
+  }, [searchInput]);
+
+  useEffect(() => {
+    void loadOrders(searchQuery);
+  }, [loadOrders, searchQuery]);
 
   const updateOrder = async (order: AdminOrderRow) => {
     setSavingId(order.id);
@@ -97,8 +120,24 @@ export default function OrdersAdminPage() {
   return (
     <section className={styles.card}>
       <h2 className={styles.sectionTitle}>Order Queue</h2>
+      <div className={styles.formRow} style={{ marginBottom: '0.8rem', maxWidth: '440px' }}>
+        <label className={styles.label}>Search Order ID</label>
+        <input
+          className={styles.input}
+          placeholder="Search exact Order ID: ZE-2026-112142"
+          value={searchInput}
+          onChange={(event) => setSearchInput(event.target.value)}
+          spellCheck={false}
+          autoComplete="off"
+        />
+      </div>
       {loading ? <p style={{ color: '#a9b7c9' }}>Loading orders...</p> : null}
       {error ? <p style={{ color: '#ffd0d0' }}>{error}</p> : null}
+      {!loading && !error && orders.length === 0 && searchQuery ? (
+        <p style={{ color: '#a9b7c9', marginBottom: '0.75rem' }}>
+          No orders found for {searchQuery}.
+        </p>
+      ) : null}
       <div className={styles.tableWrap}>
         <table className={styles.table}>
           <thead>
@@ -121,7 +160,33 @@ export default function OrdersAdminPage() {
                 <td>{order.customer}</td>
                 <td>{order.customerEmail}</td>
                 <td>{order.date}</td>
-                <td>{order.items}</td>
+                <td>
+                  <p className={styles.orderItemsCount}>{order.items}</p>
+                  {searchQuery ? (
+                    <div className={styles.orderItemsDetailList}>
+                      {(order.orderItems ?? []).map((item, index) => (
+                        <article
+                          className={styles.orderItemDetail}
+                          key={`${order.id}-${item.productName}-${index}`}
+                        >
+                          <p className={styles.orderItemName}>{item.productName}</p>
+                          <p className={styles.orderItemMeta}>
+                            Qty: {item.quantity} · Line Total: {formatCurrency(item.lineTotal)}
+                          </p>
+                          {item.selectedColor ? (
+                            <p className={styles.orderItemMeta}>Color: {item.selectedColor}</p>
+                          ) : null}
+                          {item.selectedSize ? (
+                            <p className={styles.orderItemMeta}>Size: {item.selectedSize}</p>
+                          ) : null}
+                          {item.selectedFabric ? (
+                            <p className={styles.orderItemMeta}>Fabric: {item.selectedFabric}</p>
+                          ) : null}
+                        </article>
+                      ))}
+                    </div>
+                  ) : null}
+                </td>
                 <td>{formatCurrency(order.total)}</td>
                 <td>
                   <select

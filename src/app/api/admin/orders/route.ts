@@ -10,24 +10,45 @@ import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+type OrderItemRow = {
+  product_name: string;
+  quantity: number;
+  line_total_cents: number;
+  selected_color: string | null;
+  selected_size: string | null;
+  selected_fabric: string | null;
+};
+
+export async function GET(request: Request) {
   const access = await ensureAdminApiAccess();
   if (access instanceof NextResponse) {
     return access;
   }
 
+  const { searchParams } = new URL(request.url);
+  const searchOrderNumber = searchParams.get('q')?.trim() ?? '';
+
   const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from('orders')
-    .select('id, order_number, customer_name, customer_email, created_at, total_cents, payment_status, fulfillment_status, order_items(quantity)')
+    .select(
+      'id, order_number, customer_name, customer_email, created_at, total_cents, payment_status, fulfillment_status, order_items(product_name, quantity, line_total_cents, selected_color, selected_size, selected_fabric)'
+    )
     .order('created_at', { ascending: false });
+
+  if (searchOrderNumber) {
+    query = query.ilike('order_number', searchOrderNumber);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   const rows = (data ?? []).map((order) => {
-    const itemCount = (order.order_items ?? []).reduce((sum, item) => sum + item.quantity, 0);
+    const orderItems = (order.order_items ?? []) as OrderItemRow[];
+    const itemCount = orderItems.reduce((sum, item) => sum + item.quantity, 0);
     return {
       id: order.id,
       orderNumber: order.order_number,
@@ -36,6 +57,14 @@ export async function GET() {
       date: order.created_at.slice(0, 10),
       total: Math.round(order.total_cents / 100),
       items: itemCount,
+      orderItems: orderItems.map((item) => ({
+        productName: item.product_name,
+        quantity: item.quantity,
+        lineTotal: Math.round(item.line_total_cents / 100),
+        selectedColor: item.selected_color,
+        selectedSize: item.selected_size,
+        selectedFabric: item.selected_fabric,
+      })),
       payment: displayPaymentStatus(order.payment_status),
       fulfillment: displayFulfillmentStatus(order.fulfillment_status),
     };

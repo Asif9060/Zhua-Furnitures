@@ -11,6 +11,15 @@ import { logUserActivity } from '@/lib/user-activity';
 
 export const dynamic = 'force-dynamic';
 
+type OrderItemRow = {
+  product_name: string;
+  quantity: number;
+  line_total_cents: number;
+  selected_color: string | null;
+  selected_size: string | null;
+  selected_fabric: string | null;
+};
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -44,14 +53,17 @@ export async function PATCH(
     .from('orders')
     .update(updateData)
     .eq('id', id)
-    .select('id, order_number, user_id, customer_name, customer_email, created_at, total_cents, payment_status, fulfillment_status, order_items(quantity)')
+    .select(
+      'id, order_number, user_id, customer_name, customer_email, created_at, total_cents, payment_status, fulfillment_status, order_items(product_name, quantity, line_total_cents, selected_color, selected_size, selected_fabric)'
+    )
     .single();
 
   if (error || !data) {
     return NextResponse.json({ error: error?.message ?? 'Could not update order.' }, { status: 500 });
   }
 
-  const itemCount = (data.order_items ?? []).reduce((sum, item) => sum + item.quantity, 0);
+  const orderItems = (data.order_items ?? []) as OrderItemRow[];
+  const itemCount = orderItems.reduce((sum, item) => sum + item.quantity, 0);
 
   if (data.user_id) {
     await logUserActivity({
@@ -75,6 +87,14 @@ export async function PATCH(
       date: data.created_at.slice(0, 10),
       total: Math.round(data.total_cents / 100),
       items: itemCount,
+      orderItems: orderItems.map((item) => ({
+        productName: item.product_name,
+        quantity: item.quantity,
+        lineTotal: Math.round(item.line_total_cents / 100),
+        selectedColor: item.selected_color,
+        selectedSize: item.selected_size,
+        selectedFabric: item.selected_fabric,
+      })),
       payment: displayPaymentStatus(data.payment_status),
       fulfillment: displayFulfillmentStatus(data.fulfillment_status),
     },
