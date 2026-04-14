@@ -3,14 +3,25 @@ import { useEffect, useState } from 'react';
 import { products, formatPrice } from '@/lib/data';
 import { useCartStore } from '@/store';
 import { toast } from 'sonner';
-import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight, Truck, Shield, RotateCcw, MessageCircle, Check } from 'lucide-react';
+import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight, Truck, Shield, RotateCcw, MessageCircle, Check, ZoomIn } from 'lucide-react';
 import Link from 'next/link';
 import { useWishlistStore } from '@/store';
 import { useParams } from 'next/navigation';
 import { useStorefrontProducts } from '@/lib/use-storefront-products';
 import { DEFAULT_DELIVERY_ZONES, type DeliveryZone } from '@/lib/delivery';
 import { buildWhatsAppUrl } from '@/lib/whatsapp';
+import ProductImageLightbox from '@/components/ui/ProductImageLightbox';
 import styles from './page.module.css';
+
+type RelatedImagePreviewState = {
+  productName: string;
+  images: string[];
+  index: number;
+};
+
+function toPreviewImages(images: string[]): string[] {
+  return images.filter((image) => typeof image === 'string' && image.trim().length > 0);
+}
 
 export default function ProductPage() {
   const { products: liveProducts } = useStorefrontProducts();
@@ -32,6 +43,8 @@ export default function ProductPage() {
   const [province, setProvince] = useState('');
   const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>(DEFAULT_DELIVERY_ZONES);
   const [imgIndex, setImgIndex] = useState(0);
+  const [isMainLightboxOpen, setIsMainLightboxOpen] = useState(false);
+  const [relatedImagePreview, setRelatedImagePreview] = useState<RelatedImagePreviewState | null>(null);
   const [added, setAdded] = useState(false);
   const { addItem } = useCartStore();
   const { toggle, has } = useWishlistStore();
@@ -105,8 +118,29 @@ export default function ProductPage() {
   const heightCm = Number(product.dimensions?.heightCm ?? 0);
   const hasPhysicalSpecs = weightKg > 0 || widthCm > 0 || depthCm > 0 || heightCm > 0;
   const galleryImages = product.images.length > 0 ? product.images : [];
+  const galleryPreviewImages = toPreviewImages(galleryImages);
   const imgCount = galleryImages.length > 0 ? galleryImages.length : 3;
   const safeImgIndex = Math.min(imgIndex, Math.max(0, imgCount - 1));
+
+  const openRelatedImagePreview = (
+    relatedProductName: string,
+    relatedProductImages: string[],
+    event: React.MouseEvent
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const previewImages = toPreviewImages(relatedProductImages);
+    if (previewImages.length === 0) {
+      return;
+    }
+
+    setRelatedImagePreview({
+      productName: relatedProductName,
+      images: previewImages,
+      index: 0,
+    });
+  };
 
   return (
     <div className={styles.page}>
@@ -122,15 +156,32 @@ export default function ProductPage() {
             <div className={styles.mainImage} style={{ background: `linear-gradient(135deg, ${selectedColor.hex}15, ${selectedColor.hex}08)` }}>
               <div className={styles.mainImageInner}>
                 {galleryImages[safeImgIndex] ? (
-                  <img
-                    src={galleryImages[safeImgIndex]}
-                    alt={`${product.name} image ${safeImgIndex + 1}`}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
+                  <button
+                    type="button"
+                    className={styles.mainImageOpenButton}
+                    onClick={() => setIsMainLightboxOpen(true)}
+                    aria-label="Open product image fullscreen"
+                  >
+                    <img
+                      src={galleryImages[safeImgIndex]}
+                      alt={`${product.name} image ${safeImgIndex + 1}`}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  </button>
                 ) : (
                   <ProductHeroSVG category={product.category} color={selectedColor.hex} />
                 )}
               </div>
+              {galleryImages[safeImgIndex] ? (
+                <button
+                  type="button"
+                  className={styles.mainImageZoomTrigger}
+                  onClick={() => setIsMainLightboxOpen(true)}
+                  aria-label="Zoom product image"
+                >
+                  <ZoomIn size={18} />
+                </button>
+              ) : null}
               <button className={styles.galleryNav} onClick={() => setImgIndex(Math.max(0, safeImgIndex - 1))} style={{ left: '0.875rem' }}><ChevronLeft size={18} /></button>
               <button className={styles.galleryNav} onClick={() => setImgIndex(Math.min(imgCount - 1, safeImgIndex + 1))} style={{ right: '0.875rem' }}><ChevronRight size={18} /></button>
               <div className={styles.galleryDots}>
@@ -333,6 +384,16 @@ export default function ProductPage() {
               <Link key={p.id} href={`/product/${p.slug}`} className={styles.relatedCard}>
                 <div className={styles.relatedImg} style={{ background: `${p.colors[0].hex}20` }}>
                   {p.images[0] ? (
+                    <button
+                      type="button"
+                      className={styles.relatedZoomTrigger}
+                      onClick={(event) => openRelatedImagePreview(p.name, p.images, event)}
+                      aria-label={`Preview ${p.name} image`}
+                    >
+                      <ZoomIn size={16} />
+                    </button>
+                  ) : null}
+                  {p.images[0] ? (
                     <img
                       src={p.images[0]}
                       alt={p.name}
@@ -348,6 +409,33 @@ export default function ProductPage() {
             ))}
           </div>
         </div>
+
+        <ProductImageLightbox
+          isOpen={isMainLightboxOpen}
+          images={galleryPreviewImages}
+          activeIndex={safeImgIndex}
+          onChangeIndex={setImgIndex}
+          onClose={() => setIsMainLightboxOpen(false)}
+          productName={product.name}
+        />
+
+        <ProductImageLightbox
+          isOpen={Boolean(relatedImagePreview)}
+          images={relatedImagePreview?.images ?? []}
+          activeIndex={relatedImagePreview?.index ?? 0}
+          onChangeIndex={(index) =>
+            setRelatedImagePreview((previous) =>
+              previous
+                ? {
+                    ...previous,
+                    index,
+                  }
+                : previous
+            )
+          }
+          onClose={() => setRelatedImagePreview(null)}
+          productName={relatedImagePreview?.productName ?? 'Product image'}
+        />
       </div>
     </div>
   );

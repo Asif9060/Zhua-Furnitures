@@ -1,12 +1,23 @@
 'use client';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Heart, ShoppingBag, Star, SlidersHorizontal, X } from 'lucide-react';
+import { Heart, ShoppingBag, Star, SlidersHorizontal, X, ZoomIn } from 'lucide-react';
 import { toast } from 'sonner';
 import { categories, formatPrice } from '@/lib/data';
+import ProductImageLightbox from '@/components/ui/ProductImageLightbox';
 import { useCartStore, useWishlistStore } from '@/store';
 import { useStorefrontProducts } from '@/lib/use-storefront-products';
 import styles from './page.module.css';
+
+type ImagePreviewState = {
+  productName: string;
+  images: string[];
+  index: number;
+};
+
+function toPreviewImages(images: string[]): string[] {
+  return images.filter((image) => typeof image === 'string' && image.trim().length > 0);
+}
 
 export default function ShopPage() {
   const { products } = useStorefrontProducts();
@@ -15,8 +26,25 @@ export default function ShopPage() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
   const [sortBy, setSortBy] = useState('featured');
   const [showFilters, setShowFilters] = useState(false);
+  const [imagePreview, setImagePreview] = useState<ImagePreviewState | null>(null);
   const { addItem } = useCartStore();
   const { toggle, has } = useWishlistStore();
+
+  const openImagePreview = (productName: string, images: string[], event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const previewImages = toPreviewImages(images);
+    if (previewImages.length === 0) {
+      return;
+    }
+
+    setImagePreview({
+      productName,
+      images: previewImages,
+      index: 0,
+    });
+  };
 
   const allSubcategories = useMemo(
     () => [...new Set(products.map((product) => product.subcategory))],
@@ -171,6 +199,16 @@ export default function ShopPage() {
                         }}
                       ><Heart size={15} fill={has(product.id) ? 'currentColor' : 'none'} /></button>
                     </div>
+                    {product.images[0] ? (
+                      <button
+                        type="button"
+                        className={styles.cardZoomBtn}
+                        aria-label={`Preview ${product.name} image`}
+                        onClick={(event) => openImagePreview(product.name, product.images, event)}
+                      >
+                        <ZoomIn size={15} />
+                      </button>
+                    ) : null}
                     <button
                       className={styles.cardQuickAdd}
                       onClick={e => {
@@ -208,6 +246,24 @@ export default function ShopPage() {
                 </button>
               </div>
             )}
+
+            <ProductImageLightbox
+              isOpen={Boolean(imagePreview)}
+              images={imagePreview?.images ?? []}
+              activeIndex={imagePreview?.index ?? 0}
+              onChangeIndex={(index) =>
+                setImagePreview((previous) =>
+                  previous
+                    ? {
+                        ...previous,
+                        index,
+                      }
+                    : previous
+                )
+              }
+              onClose={() => setImagePreview(null)}
+              productName={imagePreview?.productName ?? 'Product image'}
+            />
           </div>
         </div>
       </div>

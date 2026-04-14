@@ -25,6 +25,43 @@
 
 .mainImageInner { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 2rem; }
 
+.mainImageOpenButton {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: zoom-in;
+}
+
+.mainImageZoomTrigger {
+  position: absolute;
+  top: 0.875rem;
+  right: 0.875rem;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(15, 36, 59, 0.82);
+  backdrop-filter: blur(8px);
+  color: #eaf0f8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 3;
+}
+
+.mainImageZoomTrigger:hover {
+  border-color: rgba(181, 146, 65, 0.34);
+  color: #b59241;
+}
+
+.mainImageZoomTrigger:focus-visible {
+  outline: 2px solid rgba(181, 146, 65, 0.5);
+  outline-offset: 2px;
+}
+
 .galleryNav {
   position: absolute;
   top: 50%;
@@ -35,6 +72,7 @@
   color: #EAF0F8; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: all 150ms;
+  z-index: 2;
 }
 
 .galleryNav:hover { background: rgba(181,146,65,0.2); border-color: rgba(181,146,65,0.3); }
@@ -178,10 +216,61 @@
 
 .relatedCard:hover { border-color: rgba(181,146,65,0.2); transform: translateY(-4px); }
 
-.relatedImg { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.relatedImg {
+  position: relative;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.relatedZoomTrigger {
+  position: absolute;
+  right: 0.65rem;
+  top: 0.65rem;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(15, 36, 59, 0.84);
+  backdrop-filter: blur(8px);
+  color: #eaf0f8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: all 180ms ease;
+}
+
+.relatedCard:hover .relatedZoomTrigger {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.relatedZoomTrigger:hover {
+  color: #b59241;
+  border-color: rgba(181, 146, 65, 0.34);
+}
+
+.relatedZoomTrigger:focus-visible {
+  opacity: 1;
+  transform: translateY(0);
+  outline: 2px solid rgba(181, 146, 65, 0.5);
+  outline-offset: 2px;
+}
 
 .relatedName { font-family: 'Playfair Display', serif; font-size: 0.9rem; color: #EAF0F8; padding: 0 1rem 0.25rem; line-height: 1.3; }
 .relatedPrice { display: block; font-family: 'Outfit', sans-serif; font-size: 0.9rem; font-weight: 700; color: #B59241; padding: 0 1rem 1rem; }
 
 @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } .relatedGrid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .relatedGrid { grid-template-columns: 1fr 1fr; } }
+
+@media (hover: none) {
+  .relatedZoomTrigger {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

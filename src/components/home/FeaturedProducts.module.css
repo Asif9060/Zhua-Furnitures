@@ -125,6 +125,42 @@
 
 .card:hover .quickAdd { transform: translateY(0); }
 
+.zoomTrigger {
+  position: absolute;
+  right: 0.875rem;
+  bottom: 0.875rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(15, 36, 59, 0.86);
+  backdrop-filter: blur(8px);
+  color: #eaf0f8;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: all 180ms ease;
+  z-index: 3;
+}
+
+.card:hover .zoomTrigger {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.zoomTrigger:hover {
+  color: #b59241;
+  border-color: rgba(181, 146, 65, 0.36);
+}
+
+.zoomTrigger:focus-visible {
+  outline: 2px solid rgba(181, 146, 65, 0.5);
+  outline-offset: 2px;
+}
+
 /* Info */
 .info { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.4rem; }
 
@@ -183,3 +219,10 @@
 
 @media (max-width: 1024px) { .grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+
+@media (hover: none) {
+  .zoomTrigger {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

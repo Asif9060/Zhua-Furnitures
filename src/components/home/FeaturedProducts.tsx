@@ -1,15 +1,28 @@
 'use client';
+import { useState } from 'react';
 import Link from 'next/link';
-import { Heart, ShoppingBag, Star, ArrowRight } from 'lucide-react';
+import { Heart, ShoppingBag, Star, ArrowRight, ZoomIn } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatPrice, type Product } from '@/lib/data';
+import ProductImageLightbox from '@/components/ui/ProductImageLightbox';
 import { useCartStore, useWishlistStore } from '@/store';
 import { useStorefrontProducts } from '@/lib/use-storefront-products';
 import styles from './FeaturedProducts.module.css';
 
+type ImagePreviewState = {
+  productName: string;
+  images: string[];
+  index: number;
+};
+
+function toPreviewImages(images: string[]): string[] {
+  return images.filter((image) => typeof image === 'string' && image.trim().length > 0);
+}
+
 export default function FeaturedProducts() {
   const { products } = useStorefrontProducts();
   const featured = products.slice(0, 6);
+  const [imagePreview, setImagePreview] = useState<ImagePreviewState | null>(null);
   const { addItem } = useCartStore();
   const { toggle, has } = useWishlistStore();
 
@@ -22,6 +35,22 @@ export default function FeaturedProducts() {
       selectedSize: product.sizes?.[0],
     });
     toast.success(`${product.name} added to cart.`);
+  };
+
+  const openImagePreview = (productName: string, images: string[], event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const previewImages = toPreviewImages(images);
+    if (previewImages.length === 0) {
+      return;
+    }
+
+    setImagePreview({
+      productName,
+      images: previewImages,
+      index: 0,
+    });
   };
 
   return (
@@ -95,6 +124,17 @@ export default function FeaturedProducts() {
                 >
                   <ShoppingBag size={14} /> Add to Cart
                 </button>
+
+                {product.images[0] ? (
+                  <button
+                    type="button"
+                    className={styles.zoomTrigger}
+                    aria-label={`Preview ${product.name} image`}
+                    onClick={(event) => openImagePreview(product.name, product.images, event)}
+                  >
+                    <ZoomIn size={16} />
+                  </button>
+                ) : null}
               </div>
 
               {/* Info */}
@@ -122,6 +162,24 @@ export default function FeaturedProducts() {
             </Link>
           ))}
         </div>
+
+        <ProductImageLightbox
+          isOpen={Boolean(imagePreview)}
+          images={imagePreview?.images ?? []}
+          activeIndex={imagePreview?.index ?? 0}
+          onChangeIndex={(index) =>
+            setImagePreview((previous) =>
+              previous
+                ? {
+                    ...previous,
+                    index,
+                  }
+                : previous
+            )
+          }
+          onClose={() => setImagePreview(null)}
+          productName={imagePreview?.productName ?? 'Product image'}
+        />
       </div>
     </section>
   );
