@@ -17,9 +17,17 @@ export default function ProductPage() {
   const routeParams = useParams<{ slug: string }>();
   const slug = routeParams?.slug ?? '';
   const product = liveProducts.find((entry) => entry.slug === slug) || liveProducts[0] || products[0];
-  const [selectedColorName, setSelectedColorName] = useState(product.colors[0]?.name ?? '');
-  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || '');
-  const [selectedFabric, setSelectedFabric] = useState(product.fabrics?.[0] || '');
+  const colorOptions = product.colors.length > 0 ? product.colors : [{ name: 'Default', hex: '#B59241' }];
+  const sizeOptions = Array.isArray(product.sizes)
+    ? product.sizes.filter((entry) => typeof entry === 'string' && entry.trim().length > 0)
+    : [];
+  const fabricOptions = Array.isArray(product.fabrics)
+    ? product.fabrics.filter((entry) => typeof entry === 'string' && entry.trim().length > 0)
+    : [];
+
+  const [selectedColorName, setSelectedColorName] = useState(colorOptions[0]?.name ?? 'Default');
+  const [selectedSize, setSelectedSize] = useState(sizeOptions[0] || '');
+  const [selectedFabric, setSelectedFabric] = useState(fabricOptions[0] || '');
   const [quantity, setQuantity] = useState(1);
   const [province, setProvince] = useState('');
   const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>(DEFAULT_DELIVERY_ZONES);
@@ -70,13 +78,15 @@ export default function ProductPage() {
   }, []);
 
   const selectedColor =
-    product.colors.find((entry) => entry.name === selectedColorName) ??
-    product.colors[0] ??
+    colorOptions.find((entry) => entry.name === selectedColorName) ??
+    colorOptions[0] ??
     { name: 'Default', hex: '#B59241' };
-  const activeSize = product.sizes?.includes(selectedSize) ? selectedSize : product.sizes?.[0] || '';
-  const activeFabric = product.fabrics?.includes(selectedFabric)
+  const hasSizeOptions = sizeOptions.length > 0;
+  const hasFabricOptions = fabricOptions.length > 0;
+  const activeSize = sizeOptions.includes(selectedSize) ? selectedSize : sizeOptions[0] || '';
+  const activeFabric = fabricOptions.includes(selectedFabric)
     ? selectedFabric
-    : product.fabrics?.[0] || '';
+    : fabricOptions[0] || '';
   const delivery = deliveryZones.find((zone) => zone.id === province);
 
   const handleAddToCart = () => {
@@ -173,9 +183,9 @@ export default function ProductPage() {
 
             {/* Color */}
             <div className={styles.optionGroup}>
-              <label className={styles.optionLabel}>Colour: <strong className={styles.optionValue}>{selectedColor.name}</strong></label>
+              <label className={styles.optionLabel}>Color: <strong className={styles.optionValue}>{selectedColor.name}</strong></label>
               <div className={styles.colorSwatches}>
-                {product.colors.map(c => (
+                {colorOptions.map(c => (
                   <button
                     key={c.name}
                     className={`${styles.colorSwatch} ${c.name === selectedColor.name ? styles.colorSwatchActive : ''}`}
@@ -188,28 +198,32 @@ export default function ProductPage() {
             </div>
 
             {/* Size */}
-            {product.sizes && (
-              <div className={styles.optionGroup}>
-                <label className={styles.optionLabel}>Size: <strong className={styles.optionValue}>{activeSize}</strong></label>
-                <div className={styles.sizePills}>
-                  {product.sizes.map(s => (
+            <div className={styles.optionGroup}>
+              <label className={styles.optionLabel}>Size: <strong className={styles.optionValue}>{hasSizeOptions ? activeSize : 'Not specified'}</strong></label>
+              <div className={styles.sizePills}>
+                {hasSizeOptions ? (
+                  sizeOptions.map((s) => (
                     <button key={s} className={`${styles.sizePill} ${s === activeSize ? styles.sizePillActive : ''}`} onClick={() => setSelectedSize(s)}>{s}</button>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  <button className={`${styles.sizePill} ${styles.sizePillDisabled}`} disabled>Not specified</button>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Fabric */}
-            {product.fabrics && (
-              <div className={styles.optionGroup}>
-                <label className={styles.optionLabel}>Fabric: <strong className={styles.optionValue}>{activeFabric}</strong></label>
-                <div className={styles.sizePills}>
-                  {product.fabrics.map(f => (
+            <div className={styles.optionGroup}>
+              <label className={styles.optionLabel}>Fabric: <strong className={styles.optionValue}>{hasFabricOptions ? activeFabric : 'Not specified'}</strong></label>
+              <div className={styles.sizePills}>
+                {hasFabricOptions ? (
+                  fabricOptions.map((f) => (
                     <button key={f} className={`${styles.sizePill} ${f === activeFabric ? styles.sizePillActive : ''}`} onClick={() => setSelectedFabric(f)}>{f}</button>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  <button className={`${styles.sizePill} ${styles.sizePillDisabled}`} disabled>Not specified</button>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Quantity */}
             <div className={styles.optionGroup}>

@@ -18,9 +18,19 @@ function formatLastUpdated(value: Date): string {
 export default function AdminOverviewAutoRefresh() {
   const router = useRouter();
   const [enabled, setEnabled] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState(() => new Date());
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const label = useMemo(() => formatLastUpdated(lastUpdated), [lastUpdated]);
+  const label = useMemo(() => {
+    if (!lastUpdated) {
+      return '--:--:--';
+    }
+
+    return formatLastUpdated(lastUpdated);
+  }, [lastUpdated]);
+
+  useEffect(() => {
+    setLastUpdated(new Date());
+  }, []);
 
   useEffect(() => {
     const handleVisibility = () => {

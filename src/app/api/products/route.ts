@@ -36,6 +36,16 @@ function toSafeColors(value: unknown): { name: string; hex: string }[] {
   return colors.length > 0 ? colors : [{ name: 'Default', hex: '#B59241' }];
 }
 
+function toSafeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+    .filter((entry) => entry.length > 0);
+}
+
 function toImageUrls(value: unknown): string[] {
   const cloudinary = normalizeCloudinaryImageAssets(value)
     .map((asset) => asset.secureUrl)
@@ -97,8 +107,8 @@ export async function GET() {
     longDescription: row.long_description,
     images: toImageUrls(row.images),
     colors: toSafeColors(row.colors),
-    sizes: row.sizes ?? [],
-    fabrics: row.fabrics ?? [],
+    sizes: toSafeStringArray(row.sizes),
+    fabrics: toSafeStringArray(row.fabrics),
     inStock: row.in_stock,
     isCustomizable: row.is_customizable,
     deliveryDays: row.delivery_days,

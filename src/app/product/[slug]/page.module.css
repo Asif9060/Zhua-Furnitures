@@ -98,6 +98,7 @@
 
 .sizePill:hover { border-color: rgba(181,146,65,0.25); color: #EAF0F8; }
 .sizePillActive { background: rgba(181,146,65,0.1); border-color: rgba(181,146,65,0.4); color: #B59241; font-weight: 600; }
+.sizePillDisabled { opacity: 0.7; cursor: not-allowed; color: #7B8EA6; border-color: rgba(255,255,255,0.08); }
 
 .qtyControl {
   display: inline-flex; align-items: center; gap: 1rem;

@@ -21,6 +21,11 @@ interface CloudinaryImageAsset {
   createdAt?: string;
 }
 
+interface AdminProductColor {
+  name: string;
+  hex: string;
+}
+
 interface AdminProductRow {
   id: string;
   sku: string;
@@ -42,6 +47,9 @@ interface AdminProductRow {
   depthCm: number;
   heightCm: number;
   status: AdminStatus;
+  colors: AdminProductColor[];
+  sizes: string[];
+  fabrics: string[];
   images: CloudinaryImageAsset[];
   primaryImage: string | null;
   imageCount: number;
@@ -65,7 +73,56 @@ type ProductPatchPayload = {
   widthCm: string;
   depthCm: string;
   heightCm: string;
+  colors: AdminProductColor[];
+  sizes: string[];
+  fabrics: string[];
 };
+
+const DEFAULT_COLOR_HEX = '#B59241';
+
+function toSafeColorHex(value: unknown): string {
+  const raw = typeof value === 'string' ? value.trim() : '';
+  if (!/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(raw)) {
+    return DEFAULT_COLOR_HEX;
+  }
+
+  return raw.toUpperCase();
+}
+
+function normalizeProductColors(value: unknown): AdminProductColor[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => {
+      if (!entry || typeof entry !== 'object') {
+        return null;
+      }
+
+      const item = entry as Record<string, unknown>;
+      const name = typeof item.name === 'string' ? item.name.trim() : '';
+      if (!name) {
+        return null;
+      }
+
+      return {
+        name,
+        hex: toSafeColorHex(item.hex),
+      };
+    })
+    .filter((entry): entry is AdminProductColor => entry !== null);
+}
+
+function normalizeStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+    .filter((entry) => entry.length > 0);
+}
 
 const defaultNewProduct: ProductPatchPayload = {
   sku: '',
@@ -85,6 +142,9 @@ const defaultNewProduct: ProductPatchPayload = {
   widthCm: '',
   depthCm: '',
   heightCm: '',
+  colors: [{ name: '', hex: DEFAULT_COLOR_HEX }],
+  sizes: [],
+  fabrics: [],
 };
 
 function toSafeMeasure(value: unknown): number {
@@ -149,6 +209,9 @@ function normalizeProductRow(row: AdminProductRow): AdminProductRow {
     widthCm: toSafeMeasure(row.widthCm),
     depthCm: toSafeMeasure(row.depthCm),
     heightCm: toSafeMeasure(row.heightCm),
+    colors: normalizeProductColors(row.colors),
+    sizes: normalizeStringList(row.sizes),
+    fabrics: normalizeStringList(row.fabrics),
     images: Array.isArray(row.images) ? row.images : [],
     primaryImage: row.primaryImage ?? null,
     imageCount: Number.isFinite(row.imageCount) ? row.imageCount : row.images?.length ?? 0,
@@ -174,8 +237,143 @@ function buildSavePayload(product: AdminProductRow) {
     widthCm: toSafeMeasure(product.widthCm),
     depthCm: toSafeMeasure(product.depthCm),
     heightCm: toSafeMeasure(product.heightCm),
+    colors: normalizeProductColors(product.colors),
+    sizes: normalizeStringList(product.sizes),
+    fabrics: normalizeStringList(product.fabrics),
     images: product.images,
   };
+}
+
+interface ProductColorFieldsProps {
+  colors: AdminProductColor[];
+  onChange: (colors: AdminProductColor[]) => void;
+}
+
+function ProductColorFields({ colors, onChange }: ProductColorFieldsProps) {
+  const rows = colors.length > 0 ? colors : [{ name: '', hex: DEFAULT_COLOR_HEX }];
+
+  const updateRow = (index: number, patch: Partial<AdminProductColor>) => {
+    onChange(rows.map((row, rowIndex) => (rowIndex === index ? { ...row, ...patch } : row)));
+  };
+
+  const addRow = () => {
+    onChange([...rows, { name: '', hex: DEFAULT_COLOR_HEX }]);
+  };
+
+  const removeRow = (index: number) => {
+    onChange(rows.filter((_, rowIndex) => rowIndex !== index));
+  };
+
+  return (
+    <div style={{ display: 'grid', gap: '0.5rem' }}>
+      {rows.map((color, index) => (
+        <div
+          key={index}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 180px) auto',
+            gap: '0.5rem',
+            alignItems: 'center',
+          }}
+        >
+          <input
+            className={styles.input}
+            placeholder="Color name"
+            value={color.name}
+            onChange={(event) => updateRow(index, { name: event.target.value })}
+          />
+          <div style={{ display: 'grid', gridTemplateColumns: '50px minmax(0, 1fr)', gap: '0.4rem' }}>
+            <input
+              className={styles.input}
+              type="color"
+              aria-label={`Select swatch color ${index + 1}`}
+              value={toSafeColorHex(color.hex)}
+              onChange={(event) => updateRow(index, { hex: event.target.value })}
+              style={{ minHeight: '40px', padding: '0.15rem' }}
+            />
+            <input
+              className={styles.input}
+              placeholder="#B59241"
+              value={color.hex}
+              onChange={(event) => updateRow(index, { hex: event.target.value })}
+            />
+          </div>
+          <button
+            className={styles.ghostButton}
+            type="button"
+            onClick={() => removeRow(index)}
+            disabled={rows.length === 1}
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+      <div>
+        <button className={styles.ghostButton} type="button" onClick={addRow}>
+          Add Color
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface ProductStringListFieldsProps {
+  values: string[];
+  onChange: (values: string[]) => void;
+  placeholder: string;
+  addLabel: string;
+}
+
+function ProductStringListFields({ values, onChange, placeholder, addLabel }: ProductStringListFieldsProps) {
+  const rows = values.length > 0 ? values : [''];
+
+  const updateRow = (index: number, value: string) => {
+    onChange(rows.map((entry, entryIndex) => (entryIndex === index ? value : entry)));
+  };
+
+  const addRow = () => {
+    onChange([...rows, '']);
+  };
+
+  const removeRow = (index: number) => {
+    onChange(rows.filter((_, entryIndex) => entryIndex !== index));
+  };
+
+  return (
+    <div style={{ display: 'grid', gap: '0.5rem' }}>
+      {rows.map((value, index) => (
+        <div
+          key={index}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1fr) auto',
+            gap: '0.5rem',
+            alignItems: 'center',
+          }}
+        >
+          <input
+            className={styles.input}
+            placeholder={placeholder}
+            value={value}
+            onChange={(event) => updateRow(index, event.target.value)}
+          />
+          <button
+            className={styles.ghostButton}
+            type="button"
+            onClick={() => removeRow(index)}
+            disabled={rows.length === 1}
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+      <div>
+        <button className={styles.ghostButton} type="button" onClick={addRow}>
+          {addLabel}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function ProductsAdminPage() {
@@ -321,6 +519,9 @@ export default function ProductsAdminPage() {
     setEditDraft(
       normalizeProductRow({
         ...product,
+        colors: product.colors.map((color) => ({ ...color })),
+        sizes: [...product.sizes],
+        fabrics: [...product.fabrics],
         images: product.images.map((image) => ({ ...image })),
       })
     );
@@ -530,6 +731,9 @@ export default function ProductsAdminPage() {
           price: Number.isFinite(basePrice) ? Math.max(0, basePrice) : 0,
           offerPercentage,
           stock: Number(newProduct.stock || 0),
+          colors: normalizeProductColors(newProduct.colors),
+          sizes: normalizeStringList(newProduct.sizes),
+          fabrics: normalizeStringList(newProduct.fabrics),
           deliveryDays: newProduct.deliveryDays,
           weightKg: Number(newProduct.weightKg || 0),
           widthCm: Number(newProduct.widthCm || 0),
@@ -693,6 +897,31 @@ export default function ProductsAdminPage() {
               <option value="custom">custom</option>
               <option value="bestseller">bestseller</option>
             </select>
+          </div>
+          <div className={styles.formRow} style={{ gridColumn: '1 / -1' }}>
+            <label className={styles.label}>Color Options</label>
+            <ProductColorFields
+              colors={newProduct.colors}
+              onChange={(colors) => setNewProduct((prev) => ({ ...prev, colors }))}
+            />
+          </div>
+          <div className={styles.formRow} style={{ gridColumn: '1 / -1' }}>
+            <label className={styles.label}>Size Options</label>
+            <ProductStringListFields
+              values={newProduct.sizes}
+              onChange={(sizes) => setNewProduct((prev) => ({ ...prev, sizes }))}
+              placeholder="e.g. Queen (152cm)"
+              addLabel="Add Size"
+            />
+          </div>
+          <div className={styles.formRow} style={{ gridColumn: '1 / -1' }}>
+            <label className={styles.label}>Fabric Options</label>
+            <ProductStringListFields
+              values={newProduct.fabrics}
+              onChange={(fabrics) => setNewProduct((prev) => ({ ...prev, fabrics }))}
+              placeholder="e.g. Linen Blend"
+              addLabel="Add Fabric"
+            />
           </div>
           <div className={styles.formRow}>
             <label className={styles.label}>Delivery Days</label>
@@ -1290,6 +1519,40 @@ export default function ProductsAdminPage() {
                     onChange={(e) =>
                       setEditDraft((prev) => (prev ? { ...prev, deliveryDays: e.target.value } : prev))
                     }
+                  />
+                </div>
+
+                <div className={styles.formRow} style={{ gridColumn: '1 / -1' }}>
+                  <label className={styles.label}>Color Options</label>
+                  <ProductColorFields
+                    colors={editDraft.colors}
+                    onChange={(colors) =>
+                      setEditDraft((prev) => (prev ? { ...prev, colors } : prev))
+                    }
+                  />
+                </div>
+
+                <div className={styles.formRow} style={{ gridColumn: '1 / -1' }}>
+                  <label className={styles.label}>Size Options</label>
+                  <ProductStringListFields
+                    values={editDraft.sizes}
+                    onChange={(sizes) =>
+                      setEditDraft((prev) => (prev ? { ...prev, sizes } : prev))
+                    }
+                    placeholder="e.g. Queen (152cm)"
+                    addLabel="Add Size"
+                  />
+                </div>
+
+                <div className={styles.formRow} style={{ gridColumn: '1 / -1' }}>
+                  <label className={styles.label}>Fabric Options</label>
+                  <ProductStringListFields
+                    values={editDraft.fabrics}
+                    onChange={(fabrics) =>
+                      setEditDraft((prev) => (prev ? { ...prev, fabrics } : prev))
+                    }
+                    placeholder="e.g. Linen Blend"
+                    addLabel="Add Fabric"
                   />
                 </div>
 

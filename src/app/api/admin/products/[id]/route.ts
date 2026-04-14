@@ -53,6 +53,55 @@ function toSafeMeasure(value: unknown): number {
   return Math.max(0, Math.round(parsed * 100) / 100);
 }
 
+function toSafeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+    .filter((entry) => entry.length > 0);
+}
+
+type ProductColor = {
+  name: string;
+  hex: string;
+};
+
+function toSafeColorHex(value: unknown): string {
+  const raw = typeof value === 'string' ? value.trim() : '';
+  if (!/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(raw)) {
+    return '#B59241';
+  }
+
+  return raw.toUpperCase();
+}
+
+function normalizeProductColors(value: unknown): ProductColor[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => {
+      if (!entry || typeof entry !== 'object') {
+        return null;
+      }
+
+      const item = entry as Record<string, unknown>;
+      const name = typeof item.name === 'string' ? item.name.trim() : '';
+      if (!name) {
+        return null;
+      }
+
+      return {
+        name,
+        hex: toSafeColorHex(item.hex),
+      };
+    })
+    .filter((entry): entry is ProductColor => entry !== null);
+}
+
 function applyOfferPricing(basePrice: number, offerPercentage: number): {
   priceCents: number;
   originalPriceCents: number | null;
@@ -109,6 +158,9 @@ function toAdminProductRow(product: {
   width_cm: number;
   depth_cm: number;
   height_cm: number;
+  colors: unknown;
+  sizes: unknown;
+  fabrics: unknown;
   images: unknown;
 }) {
   const images = normalizeCloudinaryImageAssets(product.images);
@@ -139,6 +191,9 @@ function toAdminProductRow(product: {
     widthCm: Number(product.width_cm ?? 0),
     depthCm: Number(product.depth_cm ?? 0),
     heightCm: Number(product.height_cm ?? 0),
+    colors: normalizeProductColors(product.colors),
+    sizes: toSafeStringArray(product.sizes),
+    fabrics: toSafeStringArray(product.fabrics),
     images,
     primaryImage: images[0]?.secureUrl ?? null,
     imageCount: images.length,
@@ -174,6 +229,9 @@ export async function PATCH(
     depthCm?: number;
     heightCm?: number;
     images?: unknown;
+    colors?: unknown;
+    sizes?: unknown;
+    fabrics?: unknown;
   };
 
   const supabase = createSupabaseAdminClient();
@@ -197,6 +255,9 @@ export async function PATCH(
     width_cm?: number;
     depth_cm?: number;
     height_cm?: number;
+    colors?: ProductColor[];
+    sizes?: string[];
+    fabrics?: string[];
     images?: unknown;
   } = {};
 
@@ -265,6 +326,18 @@ export async function PATCH(
     updateData.height_cm = toSafeMeasure(payload.heightCm);
   }
 
+  if (payload.colors !== undefined) {
+    updateData.colors = normalizeProductColors(payload.colors);
+  }
+
+  if (payload.sizes !== undefined) {
+    updateData.sizes = toSafeStringArray(payload.sizes);
+  }
+
+  if (payload.fabrics !== undefined) {
+    updateData.fabrics = toSafeStringArray(payload.fabrics);
+  }
+
   if (
     (typeof payload.price === 'number' && Number.isFinite(payload.price)) ||
     payload.offerPercentage !== undefined
@@ -319,7 +392,7 @@ export async function PATCH(
     .from('products')
     .update(updateData)
     .eq('id', id)
-    .select('id, sku, slug, name, category, subcategory, stock, price_cents, original_price_cents, status, badge, description, long_description, delivery_days, weight_kg, width_cm, depth_cm, height_cm, images')
+    .select('id, sku, slug, name, category, subcategory, stock, price_cents, original_price_cents, status, badge, description, long_description, delivery_days, weight_kg, width_cm, depth_cm, height_cm, colors, sizes, fabrics, images')
     .single();
 
   if (error || !data) {
