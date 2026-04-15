@@ -81,7 +81,7 @@ export default function Footer() {
               <Link href="/" className={styles.logo}>
                 <Image
                   src="/logo.jpg"
-                  alt="Zhua Enterprises"
+                  alt="Zhua Furniture"
                   width={220}
                   height={220}
                   className={styles.logoImage}
@@ -143,8 +143,8 @@ export default function Footer() {
                 <a href={`tel:${WHATSAPP_TEL}`} className={styles.contactItem}>
                   <Phone size={14} /> {WHATSAPP_DISPLAY_NUMBER}
                 </a>
-                <a href="mailto:hello@zhuaenterprises.co.za" className={styles.contactItem}>
-                  <Mail size={14} /> hello@zhuaenterprises.co.za
+                <a href="mailto:zhuaenterprise@gmail.com" className={styles.contactItem}>
+                  <Mail size={14} /> zhuaenterprise@gmail.com
                 </a>
                 <span className={styles.contactItem}>
                   <MapPin size={14} /> Johannesburg, South Africa
@@ -160,7 +160,7 @@ export default function Footer() {
         <div className="container">
           <div className={styles.bottomInner}>
             <p className={styles.copyright}>
-              &copy; {new Date().getFullYear()} Zhua Enterprises. All rights reserved.
+              &copy; {new Date().getFullYear()} Zhua Furniture. All rights reserved.
             </p>
             <div className={styles.paymentBadges}>
               {['PayFast', 'Yoco', 'Payflex', 'Visa', 'Mastercard'].map((p) => (

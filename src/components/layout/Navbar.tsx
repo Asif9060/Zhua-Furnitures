@@ -118,7 +118,7 @@ export default function Navbar() {
           <Link href="/" className={styles.logo}>
             <Image
               src="/logo.jpg"
-              alt="Zhua Enterprises"
+              alt="Zhua Furniture"
               width={180}
               height={180}
               priority
@@ -201,7 +201,7 @@ export default function Navbar() {
               <Link href="/" className={styles.logo}>
                 <Image
                   src="/logo.jpg"
-                  alt="Zhua Enterprises"
+                  alt="Zhua Furniture"
                   width={160}
                   height={160}
                   className={styles.mobileLogoImage}

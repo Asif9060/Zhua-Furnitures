@@ -196,8 +196,8 @@ export async function PATCH(request: Request) {
       .upsert(
         {
           id: 'default',
-          store_name: existingSettings?.store_name ?? 'Zhua Enterprises',
-          support_email: existingSettings?.support_email ?? 'hello@zhuaenterprises.co.za',
+          store_name: existingSettings?.store_name ?? 'Zhua Furniture',
+          support_email: existingSettings?.support_email ?? 'zhuaenterprise@gmail.com',
           currency: existingSettings?.currency ?? 'ZAR',
           order_prefix: existingSettings?.order_prefix ?? `ZE-${new Date().getFullYear()}`,
           automation:

@@ -20,7 +20,7 @@ export default async function UserRegisterPage({
     <div className={styles.page}>
       <div className={styles.card}>
         <p className={styles.kicker}>Create Account</p>
-        <h1 className={styles.title}>Join Zhua Enterprises</h1>
+        <h1 className={styles.title}>Join Zhua Furniture</h1>
         <p className={styles.help}>Register to save products, manage orders, and access your profile.</p>
         <RegisterForm redirectTo={redirectTo} />
       </div>

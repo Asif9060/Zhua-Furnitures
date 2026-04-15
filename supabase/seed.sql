@@ -1,8 +1,8 @@
 insert into public.store_settings (id, store_name, support_email, currency, order_prefix, automation)
 values (
   'default',
-  'Zhua Enterprises',
-  'hello@zhuaenterprises.co.za',
+  'Zhua Furniture',
+  'zhuaenterprise@gmail.com',
   'ZAR',
   'ZE-2026',
   '{"autoConfirmPayments": false, "lowStockAlerts": true, "reviewModerationQueue": true}'::jsonb

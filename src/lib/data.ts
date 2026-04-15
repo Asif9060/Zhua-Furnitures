@@ -1,6 +1,6 @@
 import { DEFAULT_DELIVERY_ZONES } from './delivery';
 
-// Mock product data for Zhua Enterprises
+// Mock product data for Zhua Furniture
 
 export interface Product {
   id: string;

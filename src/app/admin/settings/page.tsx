@@ -124,11 +124,11 @@ export default function SettingsAdminPage() {
         <div className={styles.formGrid}>
           <div className={styles.formRow}>
             <label className={styles.label}>Store Name</label>
-            <input className={styles.input} defaultValue="Zhua Enterprises" />
+            <input className={styles.input} defaultValue="Zhua Furniture" />
           </div>
           <div className={styles.formRow}>
             <label className={styles.label}>Support Email</label>
-            <input className={styles.input} defaultValue="hello@zhuaenterprises.co.za" />
+            <input className={styles.input} defaultValue="zhuaenterprise@gmail.com" />
           </div>
           <div className={styles.formRow}>
             <label className={styles.label}>Default Currency</label>

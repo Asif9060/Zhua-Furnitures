@@ -25,8 +25,8 @@ export async function GET() {
   return NextResponse.json({
     settings: data ?? {
       id: 'default',
-      store_name: 'Zhua Enterprises',
-      support_email: 'hello@zhuaenterprises.co.za',
+      store_name: 'Zhua Furniture',
+      support_email: 'zhuaenterprise@gmail.com',
       currency: 'ZAR',
       order_prefix: 'ZE-2026',
       automation: {
@@ -59,8 +59,8 @@ export async function PATCH(request: Request) {
     .upsert(
       {
         id: 'default',
-        store_name: String(payload.storeName ?? 'Zhua Enterprises'),
-        support_email: String(payload.supportEmail ?? 'hello@zhuaenterprises.co.za'),
+        store_name: String(payload.storeName ?? 'Zhua Furniture'),
+        support_email: String(payload.supportEmail ?? 'zhuaenterprise@gmail.com'),
         currency: String(payload.currency ?? 'ZAR'),
         order_prefix: String(payload.orderPrefix ?? 'ZE-2026'),
         automation: (payload.automation ?? {

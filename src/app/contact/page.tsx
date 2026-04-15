@@ -104,7 +104,7 @@ export default function ContactPage() {
           <aside style={{ display: 'grid', gap: '0.8rem' }}>
             {[
               { icon: Phone, title: 'Phone', value: WHATSAPP_DISPLAY_NUMBER },
-              { icon: Mail, title: 'Email', value: 'hello@zhuaenterprises.co.za' },
+              { icon: Mail, title: 'Email', value: 'zhuaenterprise@gmail.com' },
               { icon: MapPin, title: 'Location', value: 'Johannesburg, South Africa' },
             ].map(({ icon: Icon, title, value }) => (
               <div key={title} style={{ background: '#163250', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '1rem' }}>

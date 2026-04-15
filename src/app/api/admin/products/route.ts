@@ -271,7 +271,7 @@ export async function POST(request: Request) {
   const status = parseProductStatus(String(payload.status ?? 'active'));
   const parsedBadge = parseProductBadge(payload.badge);
   const badge = parsedBadge ?? (offerPercentage > 0 ? 'sale' : null);
-  const description = String(payload.description ?? '').trim() || `${name} by Zhua Enterprises.`;
+  const description = String(payload.description ?? '').trim() || `${name} by Zhua Furniture.`;
   const longDescription =
     String(payload.longDescription ?? '').trim() ||
     description;
