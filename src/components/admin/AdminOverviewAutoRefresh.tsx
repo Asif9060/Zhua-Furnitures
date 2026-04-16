@@ -18,7 +18,7 @@ function formatLastUpdated(value: Date): string {
 export default function AdminOverviewAutoRefresh() {
   const router = useRouter();
   const [enabled, setEnabled] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<Date>(() => new Date());
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const label = useMemo(() => {
     if (!lastUpdated) {
@@ -34,6 +34,7 @@ export default function AdminOverviewAutoRefresh() {
     };
 
     handleVisibility();
+    setLastUpdated(new Date());
     document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {

@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { displayFulfillmentStatus } from '@/lib/admin-api';
 import AdminOverviewAutoRefresh from '@/components/admin/AdminOverviewAutoRefresh';
+import AdminTransactionExportControls from '@/components/admin/AdminTransactionExportControls';
 import styles from './admin-pages.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -46,6 +47,9 @@ function statusClass(status: string): string {
 export default async function AdminDashboardPage() {
   const supabase = createSupabaseAdminClient();
   const now = new Date();
+  const currentExportYear = now.getUTCFullYear();
+  const currentExportMonth = now.getUTCMonth() + 1;
+  const exportYearOptions = Array.from({ length: 6 }, (_, index) => currentExportYear - index);
   const nowMs = now.getTime();
   const dayMs = 24 * 60 * 60 * 1000;
   const currentStartMs = nowMs - 30 * dayMs;
@@ -207,6 +211,11 @@ export default async function AdminDashboardPage() {
   return (
     <>
       <AdminOverviewAutoRefresh />
+      <AdminTransactionExportControls
+        initialMonth={currentExportMonth}
+        initialYear={currentExportYear}
+        yearOptions={exportYearOptions}
+      />
 
       <section className={styles.grid4}>
         {adminMetrics.map((metric) => (

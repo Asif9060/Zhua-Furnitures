@@ -209,6 +209,11 @@
   font-size: 0.74rem;
 }
 
+.ghostButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .modalOverlay {
   position: fixed;
   inset: 0;
@@ -304,6 +309,40 @@
   color: #eaf0f8;
   padding: 0.7rem 0.8rem;
   font-size: 0.84rem;
+}
+
+.exportHeader {
+  margin-bottom: 0.85rem;
+}
+
+.exportHint {
+  color: #a9b7c9;
+  font-size: 0.8rem;
+  margin-top: -0.32rem;
+}
+
+.exportControls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  align-items: end;
+}
+
+.exportButtonRow {
+  display: flex;
+  align-items: end;
+}
+
+.exportButton {
+  width: 100%;
+  min-height: 40px;
+  font-weight: 600;
+}
+
+.exportError {
+  margin-top: 0.7rem;
+  color: #f88f8f;
+  font-size: 0.8rem;
 }
 
 .formGrid {
@@ -500,6 +539,10 @@
     min-width: 620px;
   }
 
+  .exportControls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
 }
 
 @media (max-width: 768px) {
@@ -555,6 +598,14 @@
 
   .formGrid {
     grid-template-columns: 1fr;
+  }
+
+  .exportControls {
+    grid-template-columns: 1fr;
+  }
+
+  .exportButtonRow {
+    width: 100%;
   }
 
   .productTable tr {
