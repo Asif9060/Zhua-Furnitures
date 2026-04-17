@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
-import { hasServiceSupabaseEnv } from '@/lib/supabase/env';
+import { getPublicPayFastMode, hasServiceSupabaseEnv } from '@/lib/supabase/env';
 import { getOptionalUser } from '@/lib/auth';
 import { findAuthUserIdByEmail } from '@/lib/order-linking';
 import { validatePromoCode } from '@/lib/promo';
 import { logUserActivity } from '@/lib/user-activity';
+import { PAYFAST_LIVE_MINIMUM_AMOUNT_CENTS } from '@/lib/payments/payfast';
 import {
   DEFAULT_DELIVERY_ZONES_DB,
   DEFAULT_FREE_SHIPPING_THRESHOLD_CENTS,
@@ -68,7 +69,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Supabase service role key is missing.' }, { status: 503 });
   }
 
-  const payload = (await request.json()) as CheckoutPayload;
+  let payload: CheckoutPayload;
+  try {
+    payload = (await request.json()) as CheckoutPayload;
+  } catch {
+    return NextResponse.json({ error: 'Invalid checkout payload.' }, { status: 400 });
+  }
 
   if (!payload?.delivery || !Array.isArray(payload.items) || payload.items.length === 0) {
     return NextResponse.json({ error: 'Invalid checkout payload.' }, { status: 400 });
@@ -204,6 +210,18 @@ export async function POST(request: Request) {
     subtotalCents + deliveryFeeCents - (appliedPromo?.discountCents ?? 0)
   );
   const gatewayProvider = parseGatewayProvider(String(payload.paymentMethod ?? 'placeholder'));
+
+  if (gatewayProvider === 'payfast' && getPublicPayFastMode() === 'live') {
+    if (finalTotalCents < PAYFAST_LIVE_MINIMUM_AMOUNT_CENTS) {
+      const minimum = (PAYFAST_LIVE_MINIMUM_AMOUNT_CENTS / 100).toFixed(2);
+      return NextResponse.json(
+        {
+          error: `PayFast live payments require a minimum order total of R ${minimum}.`,
+        },
+        { status: 400 }
+      );
+    }
+  }
 
   const { data: order, error: orderError } = await supabase
     .from('orders')

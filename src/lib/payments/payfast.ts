@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 
 export type PayFastMode = 'sandbox' | 'live';
+export const PAYFAST_LIVE_MINIMUM_AMOUNT_CENTS = 500;
 
 /**
  * PayFast requires x-www-form-urlencoded encoding

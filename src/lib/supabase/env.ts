@@ -37,6 +37,10 @@ function normalizePaymentMode(value: string): 'sandbox' | 'live' {
   return value.trim().toLowerCase() === 'live' ? 'live' : 'sandbox';
 }
 
+export function getPublicPayFastMode(): 'sandbox' | 'live' {
+  return normalizePaymentMode(publicPayfastMode);
+}
+
 export function getPublicSupabaseEnv(): { url: string; anonKey: string } {
   if (!hasPublicSupabaseEnv) {
     throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.');
@@ -104,7 +108,7 @@ export function getPayFastEnv(): {
     returnUrl: payfastReturnUrl,
     cancelUrl: payfastCancelUrl,
     notifyUrl: payfastNotifyUrl,
-    mode: normalizePaymentMode(publicPayfastMode),
+    mode: getPublicPayFastMode(),
   };
 }
 

@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { getPayFastEnv, hasPayFastEnv, hasServiceSupabaseEnv } from '@/lib/supabase/env';
-import { generatePayFastSignature, getPayFastProcessUrl } from '@/lib/payments/payfast';
+import {
+  generatePayFastSignature,
+  getPayFastProcessUrl,
+  PAYFAST_LIVE_MINIMUM_AMOUNT_CENTS,
+} from '@/lib/payments/payfast';
 import { getSiteUrl } from '@/lib/supabase/site-url';
 
 export const dynamic = 'force-dynamic';
@@ -58,7 +62,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'PayFast environment is not configured.' }, { status: 503 });
   }
 
-  const payload = (await request.json()) as { orderId?: string };
+  let payload: { orderId?: string };
+  try {
+    payload = (await request.json()) as { orderId?: string };
+  } catch {
+    return NextResponse.json({ error: 'Invalid payment initiation payload.' }, { status: 400 });
+  }
+
   const orderId = String(payload.orderId ?? '').trim();
 
   if (!orderId) {
@@ -83,6 +93,17 @@ export async function POST(request: Request) {
   }
 
   const payfastEnv = getPayFastEnv();
+
+  if (payfastEnv.mode === 'live' && order.total_cents < PAYFAST_LIVE_MINIMUM_AMOUNT_CENTS) {
+    const minimum = (PAYFAST_LIVE_MINIMUM_AMOUNT_CENTS / 100).toFixed(2);
+    return NextResponse.json(
+      {
+        error: `PayFast live payments require a minimum order total of R ${minimum}.`,
+      },
+      { status: 400 }
+    );
+  }
+
   const processUrl = getPayFastProcessUrl(payfastEnv.mode);
   const names = getNameParts(order.customer_name);
   const siteUrl = getSiteUrl(request.headers);
