@@ -6,6 +6,7 @@ import { getPayFastEnv, hasPayFastEnv, hasServiceSupabaseEnv } from '@/lib/supab
 import { cookies } from 'next/headers';
 import { getOptionalUser } from '@/lib/auth';
 import { normalizeEmail } from '@/lib/order-linking';
+import { applyPaidOrderStockDecrement } from '@/lib/inventory';
 
 type ConfirmationSearchParams = {
   order?: string;
@@ -248,6 +249,25 @@ async function finalizeSandboxPendingPayment(
       error: orderUpdateError.message,
     });
     return order;
+  }
+
+  try {
+    const stockResult = await applyPaidOrderStockDecrement({
+      supabase,
+      orderId: order.id,
+      source: 'sandbox_confirmation',
+    });
+
+    console.info('[Order Confirmation] Applied stock decrement for sandbox paid fallback.', {
+      orderId: order.id,
+      ...stockResult,
+    });
+  } catch (stockError) {
+    const errorMessage = stockError instanceof Error ? stockError.message : 'Stock decrement failed.';
+    console.error('[Order Confirmation] Could not decrement stock during sandbox fallback.', {
+      orderId: order.id,
+      error: errorMessage,
+    });
   }
 
   const selectClause =

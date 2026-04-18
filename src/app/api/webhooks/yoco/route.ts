@@ -7,6 +7,7 @@ import {
   mapYocoPaymentStatus,
   verifyYocoWebhookSignature,
 } from '@/lib/payments/yoco';
+import { applyPaidOrderStockDecrement } from '@/lib/inventory';
 
 export const dynamic = 'force-dynamic';
 
@@ -248,6 +249,7 @@ export async function POST(request: Request) {
   const nowIso = new Date().toISOString();
   const paymentStatus =
     order.payment_status === 'paid' && providerStatus !== 'failed' ? 'paid' : providerStatus;
+  const isFirstPaidTransition = paymentStatus === 'paid' && order.payment_status !== 'paid';
   let resolvedUserId = order.user_id;
 
   if (paymentStatus === 'paid' && !resolvedUserId) {
@@ -464,6 +466,41 @@ export async function POST(request: Request) {
             .eq('id', promoCode.id);
         }
       }
+    }
+  }
+
+  if (isFirstPaidTransition) {
+    try {
+      const stockResult = await applyPaidOrderStockDecrement({
+        supabase,
+        orderId: order.id,
+        source: 'yoco_webhook',
+      });
+
+      console.info('[Yoco Webhook] Applied stock decrement for first paid transition.', {
+        webhookId,
+        orderId: order.id,
+        ...stockResult,
+      });
+    } catch (stockError) {
+      const errorMessage = stockError instanceof Error ? stockError.message : 'Stock decrement failed.';
+      console.error('[Yoco Webhook] Could not decrement stock for paid order.', {
+        webhookId,
+        orderId: order.id,
+        error: errorMessage,
+      });
+
+      await supabase
+        .from('payment_webhook_events')
+        .update({
+          processing_status: 'failed',
+          processed_at: nowIso,
+          related_order_id: order.id,
+          error_message: errorMessage,
+        })
+        .eq('id', createdEvent.id);
+
+      return new NextResponse(errorMessage, { status: 500 });
     }
   }
 
