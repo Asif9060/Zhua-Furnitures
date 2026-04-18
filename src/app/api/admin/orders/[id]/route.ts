@@ -20,6 +20,102 @@ type OrderItemRow = {
   selected_fabric: string | null;
 };
 
+type AdminOrderRow = {
+  id: string;
+  order_number: string;
+  user_id: string | null;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  address: string;
+  city: string;
+  province: string;
+  postal_code: string;
+  created_at: string;
+  delivery_type: string;
+  delivery_fee_cents: number;
+  total_cents: number;
+  payment_method: string;
+  payment_reference: string | null;
+  payment_received_at: string | null;
+  payment_settled_at: string | null;
+  promo_discount_cents: number;
+  payment_status:
+    | 'awaiting_payment'
+    | 'pending'
+    | 'paid'
+    | 'partial'
+    | 'failed'
+    | 'placeholder';
+  fulfillment_status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  order_items: OrderItemRow[] | null;
+};
+
+const adminOrderSelect =
+  'id, order_number, user_id, customer_name, customer_email, customer_phone, address, city, province, postal_code, created_at, delivery_type, delivery_fee_cents, total_cents, payment_method, payment_reference, payment_received_at, payment_settled_at, promo_discount_cents, payment_status, fulfillment_status, order_items(product_name, quantity, line_total_cents, selected_color, selected_size, selected_fabric)';
+
+function mapAdminOrderRow(data: AdminOrderRow) {
+  const orderItems = (data.order_items ?? []) as OrderItemRow[];
+  const itemCount = orderItems.reduce((sum, item) => sum + item.quantity, 0);
+
+  return {
+    id: data.id,
+    orderNumber: data.order_number,
+    customer: data.customer_name,
+    customerEmail: data.customer_email,
+    customerPhone: data.customer_phone,
+    address: data.address,
+    city: data.city,
+    province: data.province,
+    postalCode: data.postal_code,
+    date: data.created_at.slice(0, 10),
+    deliveryType: data.delivery_type,
+    deliveryFee: Math.round(data.delivery_fee_cents / 100),
+    total: Math.round(data.total_cents / 100),
+    paymentMethod: data.payment_method,
+    paymentReference: data.payment_reference,
+    paymentReceivedAt: data.payment_received_at,
+    paymentSettledAt: data.payment_settled_at,
+    promoDiscount: Math.round(data.promo_discount_cents / 100),
+    items: itemCount,
+    orderItems: orderItems.map((item) => ({
+      productName: item.product_name,
+      quantity: item.quantity,
+      lineTotal: Math.round(item.line_total_cents / 100),
+      selectedColor: item.selected_color,
+      selectedSize: item.selected_size,
+      selectedFabric: item.selected_fabric,
+    })),
+    payment: displayPaymentStatus(data.payment_status),
+    fulfillment: displayFulfillmentStatus(data.fulfillment_status),
+  };
+}
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const access = await ensureAdminApiAccess();
+  if (access instanceof NextResponse) {
+    return access;
+  }
+
+  const { id } = await params;
+
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase.from('orders').select(adminOrderSelect).eq('id', id).maybeSingle();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (!data) {
+    return NextResponse.json({ error: 'Order not found.' }, { status: 404 });
+  }
+
+  return NextResponse.json({ order: mapAdminOrderRow(data as AdminOrderRow) });
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -53,17 +149,12 @@ export async function PATCH(
     .from('orders')
     .update(updateData)
     .eq('id', id)
-    .select(
-      'id, order_number, user_id, customer_name, customer_email, created_at, total_cents, payment_status, fulfillment_status, order_items(product_name, quantity, line_total_cents, selected_color, selected_size, selected_fabric)'
-    )
+    .select(adminOrderSelect)
     .single();
 
   if (error || !data) {
     return NextResponse.json({ error: error?.message ?? 'Could not update order.' }, { status: 500 });
   }
-
-  const orderItems = (data.order_items ?? []) as OrderItemRow[];
-  const itemCount = orderItems.reduce((sum, item) => sum + item.quantity, 0);
 
   if (data.user_id) {
     await logUserActivity({
@@ -78,25 +169,5 @@ export async function PATCH(
     });
   }
 
-  return NextResponse.json({
-    order: {
-      id: data.id,
-      orderNumber: data.order_number,
-      customer: data.customer_name,
-      customerEmail: data.customer_email,
-      date: data.created_at.slice(0, 10),
-      total: Math.round(data.total_cents / 100),
-      items: itemCount,
-      orderItems: orderItems.map((item) => ({
-        productName: item.product_name,
-        quantity: item.quantity,
-        lineTotal: Math.round(item.line_total_cents / 100),
-        selectedColor: item.selected_color,
-        selectedSize: item.selected_size,
-        selectedFabric: item.selected_fabric,
-      })),
-      payment: displayPaymentStatus(data.payment_status),
-      fulfillment: displayFulfillmentStatus(data.fulfillment_status),
-    },
-  });
+  return NextResponse.json({ order: mapAdminOrderRow(data as AdminOrderRow) });
 }

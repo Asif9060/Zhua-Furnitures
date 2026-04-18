@@ -20,6 +20,40 @@ function paymentClass(status: string): string {
   return `${styles.badge} ${styles.badgeDanger}`;
 }
 
+function normalizeLabel(value: string): string {
+  return value
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatDateTime(value: string | null): string {
+  if (!value) {
+    return '-';
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return parsed.toLocaleString('en-ZA', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+interface AdminOrderItem {
+  productName: string;
+  quantity: number;
+  lineTotal: number;
+  selectedColor: string | null;
+  selectedSize: string | null;
+  selectedFabric: string | null;
+}
+
 interface AdminOrderRow {
   id: string;
   orderNumber: string;
@@ -28,16 +62,24 @@ interface AdminOrderRow {
   date: string;
   total: number;
   items: number;
-  orderItems: Array<{
-    productName: string;
-    quantity: number;
-    lineTotal: number;
-    selectedColor: string | null;
-    selectedSize: string | null;
-    selectedFabric: string | null;
-  }>;
+  orderItems: AdminOrderItem[];
   payment: 'Awaiting Payment' | 'Pending' | 'Paid' | 'Partial' | 'Failed' | 'Placeholder';
   fulfillment: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+}
+
+interface AdminOrderDetails extends AdminOrderRow {
+  customerPhone: string;
+  address: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  deliveryType: string;
+  deliveryFee: number;
+  paymentMethod: string;
+  paymentReference: string | null;
+  paymentReceivedAt: string | null;
+  paymentSettledAt: string | null;
+  promoDiscount: number;
 }
 
 export default function OrdersAdminPage() {
@@ -47,6 +89,10 @@ export default function OrdersAdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [detailsOrderId, setDetailsOrderId] = useState<string | null>(null);
+  const [detailsOrder, setDetailsOrder] = useState<AdminOrderDetails | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState('');
 
   useToastFeedback({ error });
 
@@ -87,6 +133,53 @@ export default function OrdersAdminPage() {
   useEffect(() => {
     void loadOrders(searchQuery);
   }, [loadOrders, searchQuery]);
+
+  useEffect(() => {
+    if (!detailsOrderId) {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setDetailsOrderId(null);
+        setDetailsOrder(null);
+        setDetailsError('');
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [detailsOrderId]);
+
+  const closeDetailsModal = () => {
+    setDetailsOrderId(null);
+    setDetailsOrder(null);
+    setDetailsError('');
+    setDetailsLoading(false);
+  };
+
+  const openDetailsModal = async (order: AdminOrderRow) => {
+    setDetailsOrderId(order.id);
+    setDetailsOrder(null);
+    setDetailsError('');
+    setDetailsLoading(true);
+
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}`, { cache: 'no-store' });
+      const data = (await res.json()) as { order?: AdminOrderDetails; error?: string };
+
+      if (!res.ok || !data.order) {
+        throw new Error(data.error ?? 'Could not load order details.');
+      }
+
+      setDetailsOrder(data.order);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not load order details.';
+      setDetailsError(message);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
 
   const updateOrder = async (order: AdminOrderRow) => {
     setSavingId(order.id);
@@ -247,6 +340,15 @@ export default function OrdersAdminPage() {
                   <div className={styles.inlineActions}>
                     <button
                       className={styles.ghostButton}
+                      disabled={detailsLoading && detailsOrderId === order.id}
+                      onClick={() => {
+                        void openDetailsModal(order);
+                      }}
+                    >
+                      {detailsLoading && detailsOrderId === order.id ? 'Loading...' : 'Details'}
+                    </button>
+                    <button
+                      className={styles.ghostButton}
                       disabled={savingId === order.id}
                       onClick={() => updateOrder(order)}
                     >
@@ -259,6 +361,139 @@ export default function OrdersAdminPage() {
           </tbody>
         </table>
       </div>
+
+      {detailsOrderId ? (
+        <div className={styles.modalOverlay} onClick={closeDetailsModal}>
+          <div className={styles.modalCard} onClick={(event) => event.stopPropagation()}>
+            <header className={styles.modalHeader}>
+              <div>
+                <h3 className={styles.modalTitle}>Order Details</h3>
+                <p className={styles.modalMeta}>{detailsOrder?.orderNumber ?? 'Loading order...'}</p>
+              </div>
+              <button className={styles.ghostButton} onClick={closeDetailsModal}>
+                Close
+              </button>
+            </header>
+            <div className={styles.modalBody}>
+              {detailsLoading ? <p style={{ color: '#a9b7c9' }}>Loading full order details...</p> : null}
+              {detailsError ? <p style={{ color: '#ffd0d0' }}>{detailsError}</p> : null}
+
+              {!detailsLoading && !detailsError && detailsOrder ? (
+                <>
+                  <div className={styles.detailsGrid}>
+                    <section className={styles.detailCard}>
+                      <h4 className={styles.detailHeading}>Order Summary</h4>
+                      <p className={styles.detailLine}>
+                        <span className={styles.detailLabel}>Order ID</span>
+                        <span className={styles.detailValue}>{detailsOrder.orderNumber}</span>
+                      </p>
+                      <p className={styles.detailLine}>
+                        <span className={styles.detailLabel}>Date</span>
+                        <span className={styles.detailValue}>{detailsOrder.date}</span>
+                      </p>
+                      <p className={styles.detailLine}>
+                        <span className={styles.detailLabel}>Total</span>
+                        <span className={styles.detailValue}>{formatCurrency(detailsOrder.total)}</span>
+                      </p>
+                      <div className={styles.detailBadges}>
+                        <span className={paymentClass(detailsOrder.payment)}>{detailsOrder.payment}</span>
+                        <span className={statusClass(detailsOrder.fulfillment)}>{detailsOrder.fulfillment}</span>
+                      </div>
+                    </section>
+
+                    <section className={styles.detailCard}>
+                      <h4 className={styles.detailHeading}>Customer</h4>
+                      <p className={styles.detailLine}>
+                        <span className={styles.detailLabel}>Name</span>
+                        <span className={styles.detailValue}>{detailsOrder.customer}</span>
+                      </p>
+                      <p className={styles.detailLine}>
+                        <span className={styles.detailLabel}>Email</span>
+                        <span className={styles.detailValue}>{detailsOrder.customerEmail}</span>
+                      </p>
+                      <p className={styles.detailLine}>
+                        <span className={styles.detailLabel}>Phone</span>
+                        <span className={styles.detailValue}>{detailsOrder.customerPhone}</span>
+                      </p>
+                    </section>
+
+                    <section className={styles.detailCard}>
+                      <h4 className={styles.detailHeading}>Delivery Address</h4>
+                      <p className={styles.detailAddress}>{detailsOrder.address}</p>
+                      <p className={styles.detailAddress}>
+                        {detailsOrder.city}, {normalizeLabel(detailsOrder.province)} {detailsOrder.postalCode}
+                      </p>
+                      <p className={styles.detailLine}>
+                        <span className={styles.detailLabel}>Delivery Type</span>
+                        <span className={styles.detailValue}>{normalizeLabel(detailsOrder.deliveryType)}</span>
+                      </p>
+                      <p className={styles.detailLine}>
+                        <span className={styles.detailLabel}>Delivery Fee</span>
+                        <span className={styles.detailValue}>{formatCurrency(detailsOrder.deliveryFee)}</span>
+                      </p>
+                    </section>
+
+                    <section className={styles.detailCard}>
+                      <h4 className={styles.detailHeading}>Payment</h4>
+                      <p className={styles.detailLine}>
+                        <span className={styles.detailLabel}>Method</span>
+                        <span className={styles.detailValue}>{normalizeLabel(detailsOrder.paymentMethod)}</span>
+                      </p>
+                      <p className={styles.detailLine}>
+                        <span className={styles.detailLabel}>Reference</span>
+                        <span className={styles.detailValue}>{detailsOrder.paymentReference ?? '-'}</span>
+                      </p>
+                      <p className={styles.detailLine}>
+                        <span className={styles.detailLabel}>Received</span>
+                        <span className={styles.detailValue}>{formatDateTime(detailsOrder.paymentReceivedAt)}</span>
+                      </p>
+                      <p className={styles.detailLine}>
+                        <span className={styles.detailLabel}>Settled</span>
+                        <span className={styles.detailValue}>{formatDateTime(detailsOrder.paymentSettledAt)}</span>
+                      </p>
+                      <p className={styles.detailLine}>
+                        <span className={styles.detailLabel}>Promo Discount</span>
+                        <span className={styles.detailValue}>{formatCurrency(detailsOrder.promoDiscount)}</span>
+                      </p>
+                    </section>
+                  </div>
+
+                  <section className={styles.detailItemsSection}>
+                    <h4 className={styles.detailHeading}>Items</h4>
+                    <div className={styles.orderItemsDetailList}>
+                      {detailsOrder.orderItems.map((item, index) => (
+                        <article
+                          className={styles.orderItemDetail}
+                          key={`${detailsOrder.id}-${item.productName}-${index}`}
+                        >
+                          <p className={styles.orderItemName}>{item.productName}</p>
+                          <p className={styles.orderItemMeta}>
+                            Qty: {item.quantity} · Line Total: {formatCurrency(item.lineTotal)}
+                          </p>
+                          {item.selectedColor ? (
+                            <p className={styles.orderItemMeta}>Color: {item.selectedColor}</p>
+                          ) : null}
+                          {item.selectedSize ? (
+                            <p className={styles.orderItemMeta}>Size: {item.selectedSize}</p>
+                          ) : null}
+                          {item.selectedFabric ? (
+                            <p className={styles.orderItemMeta}>Fabric: {item.selectedFabric}</p>
+                          ) : null}
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+                </>
+              ) : null}
+            </div>
+            <footer className={styles.modalFooter}>
+              <button className={styles.ghostButton} onClick={closeDetailsModal}>
+                Close
+              </button>
+            </footer>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
